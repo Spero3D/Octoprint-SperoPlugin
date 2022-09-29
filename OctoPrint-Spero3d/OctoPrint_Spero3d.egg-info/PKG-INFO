@@ -1,0 +1,9 @@
+Metadata-Version: 2.1
+Name: OctoPrint-Spero3d
+Version: 0.1.0
+Summary: TODO
+Home-page: https://github.com/you/OctoPrint-Spero3d
+Author: Spero3d
+Author-email: info@spero3d.com
+License: AGPLv3
+Requires-Python: >=3,<4
