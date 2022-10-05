@@ -1581,9 +1581,6 @@ $(function() {
                 }
 
 
-
-
-
                 self.changePointer(true);
                 console.log("pointer")
                 self.pause_pointer(index);

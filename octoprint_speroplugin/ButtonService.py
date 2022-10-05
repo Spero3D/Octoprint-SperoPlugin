@@ -68,7 +68,6 @@ class ButtonService():
         print("Button Service init")
         self.__thresholdUtility = hold_time
         if _pin1:
-
             self.pinUtility = _pin1
             self.__buttonUtility = Button(_pin1,pull_up=True, hold_time=hold_time)
             self.__buttonUtility.when_held = self.__onHeldUtility

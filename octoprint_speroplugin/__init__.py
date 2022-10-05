@@ -19,7 +19,7 @@ import datetime
 import threading
 from flask import jsonify,render_template
 import json
-from.Control import Control
+from .SheildControl import SheildControl
 from threading import Timer
 
 
@@ -48,12 +48,12 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
 
     def __init__(self):
         self.sheild = dict()
-        
+        self.sheild_control=SheildControl(2,6,3,23,18,4,8)
         print('-----------------------------Plugin INIT------------------------------')
-        self.index=0
+   
         self.esp = dict()
-        self.espState="saaaa"
-        self.tablaState="saaaa"
+        self.queue_state="saaaa"
+        self.print_bed_state="saaaa"
         self.currentİndex=0
         self.queues = []
         self.queue_state = "IDLE"
@@ -142,10 +142,10 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
             self._printer.cancel_print()
     
         self.esp["motor"] = 'IDLE'
-        Control.buttonService(self)
+        SheildControl.buttonService(self)
         fileDir = ROOT_DIR + "\\queues.json"
         fileExist = os.path.exists(fileDir)
-        self.ejecting=Control.Sequence_Finish()
+        self.ejecting=SheildControl.Sequence_Finish()
         if self.ejecting==False:
           print("-----------------ejecting falseeeeeeee--------")
 
@@ -177,13 +177,13 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
         switch1=Button(0)
         switch2=Button(5)
         while True:
-            pin2.when_pressed=Control.startSequence
-            pin3.when_pressed=Control.backward
-            pin3.when_released=Control.callStop
-            pin22.when_pressed=Control.forward
-            pin22.when_released=Control.callStop
-            switch1.when_pressed=Control.switch1Press
-            switch2.when_pressed=Control.switch2Press
+            pin2.when_pressed=SheildControl.startSequence
+            pin3.when_pressed=SheildControl.backward
+            pin3.when_released=SheildControl.callStop
+            pin22.when_pressed=SheildControl.forward
+            pin22.when_released=SheildControl.callStop
+            switch1.when_pressed=SheildControl.switch1Press
+            switch2.when_pressed=SheildControl.switch2Press
                
                
                              
@@ -192,7 +192,7 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
     def on_after_startup(self):
         self._logger.info("KİNG İS HERE (more: %s)" % self._settings.get(["url"]))
         self.sendPrinterState()
-        self.motorRun()
+       
   
 
     
@@ -207,15 +207,15 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
                 
                 
     def on_event(self, event, payload):
-        self.tablaState=Control.tabla_State()
+        self.print_bed_state=SheildControl.tabla_State()
         self.message_to_js(motorPin1=12)
-        motor=Control.motor_State()
+        motor=SheildControl.motor_State()
         self.esp["motor"] =motor
-        self.espState=Control.motor_State()
+        self.espState=SheildControl.motor_State()
         if motor:
             motorState = motor
             self.esp["motor"] = motor
-            self.espState=Control.motor_State()
+            self.espState=SheildControl.motor_State()
             if motorState == "eject_start":
                 self.ejecting = True
                 self.eject_fail = False
@@ -330,14 +330,14 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
             
     def Ejecting(self):
         print("ejectstart")
-        Control.startSequence()
+        SheildControl.startSequence()
         self.WaittingEject()
         
    
     def WaittingEject(self):
         print("ejectwating")
-        print(Control.Sequence_Finish())
-        if(Control.Sequence_Finish()==False):
+        print(SheildControl.Sequence_Finish())
+        if(SheildControl.Sequence_Finish()==False):
             print("ejectFinish")
           
             self.message_to_js(
@@ -369,7 +369,7 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
                 )
             self.state="Finishing"
             self.state="asdasd"
-            if(self.Pauseclick!=True and Control.Sequence_Finish()==False):
+            if(self.Pauseclick!=True and SheildControl.Sequence_Finish()==False):
                 self.currentİndex=self.currentİndex+1
                 self.start_print()   
             else:
@@ -391,7 +391,7 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
             state = self.current_item["state"]
             if state == "Pausing" or state == "Paused" or state == "Printing":
                 self.isManualEject = True
-                Control.startSequence()
+                SheildControl.startSequence()
             else:
                 self.isManualEject = False
     
@@ -495,10 +495,10 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
     def sendPrinterState(self):
         try:
             index = int(flask.request.args.get("index", 0))
-            self.ejecting=Control.Sequence_Finish()
+            self.ejecting=SheildControl.Sequence_Finish()
             threading.Timer(5.0, self.sendPrinterState).start()
             self.connection==True
-            self.ejecting=Control.Sequence_Finish()
+            self.ejecting=SheildControl.Sequence_Finish()
             if self.connection == True:
                 print("-----------------------------------------------------------------------------------+"+state+"-----------------------")
                 state = self._printer.get_state_id()
@@ -508,7 +508,7 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
                 ))
 
             else:
-                self.ejecting=Control.Sequence_Finish()
+                self.ejecting=SheildControl.Sequence_Finish()
                 print(self.ejecting)
                 print(self.ejecting)
                 if self.isQueuePrinting == True and self.isQueueStarted == True and self.ejecting==True and self.printdonee==True:
@@ -592,7 +592,7 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
         
         return super().on_settings_save(data)
 
-    def message_to_js(self,canselQuee="as", state ="asdpkasşd",tablaState="bbbb",espState="aaaaa",ahmet="asdoahsdnjashndklj",targetTemp=None,motorPin1=None, motorPin2=None ,switchFront= None,buttonForward=None,switchBack=None,buttonBackword=None, buttonSequence=None,
+    def message_to_js(self,canselQuee="as", state ="asdpkasşd",print_bed_state="bbbb",espState="aaaaa",ahmet="asdoahsdnjashndklj",targetTemp=None,motorPin1=None, motorPin2=None ,switchFront= None,buttonForward=None,switchBack=None,buttonBackword=None, buttonSequence=None,
                       minTaskTemp=None ,maxQueues= None,delaySeconds=None,sendItemIndex=False, stop=False, terminate=None, itemResult=None,ejecting_finish=None,printStart=None):
 
 
@@ -603,8 +603,8 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
             message["canselQuee"] = canselQuee
         if(state != None):
             message["state"] = self.state
-        if(tablaState != None):
-            message["tablaState"] = self.tablaState  
+        if(print_bed_state != None):
+            message["print_bed_state"] = self.print_bed_state  
         if(espState != None):
             message["espState"] = self.espState                               
         if(self.esp != None):
@@ -953,8 +953,8 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
         if(self.Pauseclick==False):
                 self.queue_state="RUNNING"
 
-        self.espState=Control.motor_State()
-        self.tablaState="IDLEE"
+        self.espState=SheildControl.motor_State()
+        self.print_bed_state="IDLEE"
 
 
         target_temp = self._settings.get(["target_bed_temp"])
@@ -971,7 +971,7 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
                                 current_files=self.currentFiles,
                                 esp=self.esp,
                                 espState=self.espState,
-                                tablaState=self.tablaState,
+                                print_bed_state=self.print_bed_state,
                                 ejecting=self.ejecting,
                                 eject_fail=self.eject_fail,
                                 target_temp=target_temp,
@@ -986,16 +986,16 @@ class Speroplugin(     octoprint.plugin.StartupPlugin,
     def device_controll(self):
         data = flask.request.get_json()  
         if (data["request"] =="backward"):
-            Control.getMessage("backword")
+            SheildControl.getMessage("backword")
             self.espState="MOTOR GOING TO BACKWARD"
         if (data["request"] =="forward"):
-            Control.getMessage("forward")
+            SheildControl.getMessage("forward")
             self.espState="MOTOR GOING TO FORWARD"
         if (data["request"] =="stop"):
-            Control.getMessage("stop")
+            SheildControl.getMessage("stop")
             self.espState="MOTOR STOP"
         if (data["request"] =="eject"):
-            Control.startSequence()
+            SheildControl.startSequence()
             
         
 

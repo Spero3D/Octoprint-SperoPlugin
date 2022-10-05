@@ -9,7 +9,6 @@ import RPi.GPIO as GPIO
 from enum import Enum
 
 
-
 durum="MotorState.IDLE"
 GPIO.setmode(GPIO.BCM)
 
