@@ -1,3 +1,5 @@
+from multiprocessing import connection
+from sqlite3 import connect
 from time import time
 import RPi.GPIO as GPIO 
 from signal import pause
@@ -10,12 +12,17 @@ from enum import Enum
 
 
 durum="MotorState.IDLE"
+connectionn="disconnected"
 GPIO.setmode(GPIO.BCM)
+
 
 class MotorService():
 
    def __initMotor(self):
+      global connectionn
+
       if self._pin1 and self._pin2:
+         connectionn="connected"
          GPIO.setup(self._pin1,GPIO.OUT)
          GPIO.setup(self._pin2,GPIO.OUT)
 
@@ -68,3 +75,5 @@ class MotorState(Enum):
   
   def getState():
      return durum
+  def getConnection():
+     return connectionn

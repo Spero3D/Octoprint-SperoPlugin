@@ -40,6 +40,11 @@ class SheildControl:
       print('-----------------------------CONTROL    INIT------------------------------')
       
       
+    def connection(self):
+        
+        self.connection_sheild=MotorState.getConnection()
+        return MotorState.getConnection()
+
    
     def forward(self):
         self.motor_state='MOTOR GOING TO FORWARD'

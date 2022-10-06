@@ -1,253 +1,235 @@
-/* TODO: Have your plugin's CSS files generated to here. */
-
-@keyframes openAnim {
+#tab_plugin_speroplugin .main-model{
+  width: 100%;
 }
 
-@keyframes closeAnim {
+#tab_plugin_speroplugin .main-model .state-container{
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  
+  border:1px;
+  border-color: #3CAFEA;
+  border-width: 2px;
+  width: 100%;
+  border-style: solid;
+  overflow: hidden ;
 }
-
-#settings_plugin_printox .input-controll {
-  padding-top: 20px;
-  padding-bottom: 20px;
+#tab_plugin_speroplugin  .state-container .spero-logo{
+ width:100%;
+ height:4rem;
+ background-color: #3CAFEA;
+ display: flex;
+ align-items: center;
+ justify-content: center;
 }
+#tab_plugin_speroplugin  .state-container .state-section{
 
-#tab_plugin_speroplugin .headText {
-  font-weight: bold;
-  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
-    "Lucida Sans", Arial, sans-serif;
-  color: #404040;
+  display: flex;
+  flex: 1;
+  padding: 24px;
+  background-color: #F5F5F5;
+
+
+ }
+ #tab_plugin_speroplugin  .state-container .state-section .half{
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
-#tab_plugin_speroplugin .headText2 {
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: stretch;
-  min-width: 20px;
-  max-width: 20px;
-  max-height: 20px;
-  position:relative;
-
-  background-color:rgb(24, 230, 230);
-  cursor: pointer;
-  border-radius: 75px;
-  font-weight: bold;
-  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
-    "Lucida Sans", Arial, sans-serif;
-  color: #c40808;
-
-}
-
-#tab_plugin_speroplugin .headText4 {
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: stretch;
-  min-width: 20px;
-  max-width: 20px;
-  max-height: 20px;
-  position:relative;
-
-  background-color:rgb(170, 175, 175);
-  cursor: pointer;
-  border-radius: 75px;
-  font-weight: bold;
-  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
-    "Lucida Sans", Arial, sans-serif;
-  color: #c40808;
-
-}
-#tab_plugin_speroplugin .headText5 {
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: stretch;
-  min-width: 20px;
-  max-width: 20px;
-  max-height: 20px;
-  position:relative;
-
-  background-color:rgb(32, 177, 44);
-  cursor: pointer;
-  border-radius: 75px;
-  font-weight: bold;
-  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
-    "Lucida Sans", Arial, sans-serif;
-  color: #c40808;
-
-}
+  
 
 
 
 
+ #tab_plugin_speroplugin .items_space {
 
-#nokta {
-  background-color: rgb(10, 10, 2);
-  color: #c40808;
+  color: #5B5B5B;
+  font-family: 'Arial';
+  font-style: normal;
+  padding-left:7px ;
+  font-size: 13px;
 
-}
-#tab_plugin_speroplugin .headText3 {
-  min-width: 20px;
-  max-width: 20px;
-  max-height: 20px;
-  background-color:rgb(230, 141, 24);
-  cursor: pointer;
-  border-radius: 85px;
+
+  
+ }
+
+   
+ #tab_plugin_speroplugin .items_space2 {
+
+  color: #5B5B5B;
+  font-family: 'Arial';
+  font-style: normal;
+  padding-left:7px ;
+  font-size: 13px;
   font-weight: bold;
 
-  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
-    "Lucida Sans", Arial, sans-serif;
-  color: #404040;
-}
 
-#tab_plugin_speroplugin .connection {
-  border-bottom: 1px solid #808080;
-}
+  
+ }
 
-#tab_plugin_speroplugin .inlineText {
-  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
-    "Lucida Sans", Arial, sans-serif;
-  color: #404040;
-}
 
-#tab_plugin_speroplugin .item_text {
-  max-width: 12em;
-  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
-    "Lucida Sans", Arial, sans-serif;
-  color: #404040;
-  overflow-wrap: break-word;
-}
-#tab_plugin_speroplugin .controllButtons {
-  vertical-align: middle;
-  /* border: #404040 1px solid; */
-}
 
-#tab_plugin_speroplugin .buttonGrid {
-  padding: 20px;
-  grid-gap: 10px;
-  display: grid;
-  grid-template-columns: 1fr 2fr 2fr 1fr;
-}
+ 
 
-#tab_plugin_speroplugin .modal-content {
-  background-color: #fefefe;
+ 
+
+ #tab_plugin_speroplugin .buttons_item {
   margin: auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%;
-}
-
-#tab_plugin_speroplugin .device {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  gap: 5px;
-
+  color: #777777;
+  border-style: solid;
+  border-radius: 7px;
+  min-width: 120px;
+  height: 25px;
+  display: flex;
   align-items: center;
-  align-content: center;
-  vertical-align: middle;
+  border-width: 0.1px;
+  border-color: #a59090;
+}  
+  
+ 
+ #tab_plugin_speroplugin .buttons_item:hover{
+  background-color:#3CAFEA;
+  color: white;
+ }
+ #tab_plugin_speroplugin .buttons_item:active{
+  opacity:0.5;
+ }
+ #tab_plugin_speroplugin .buttons_item svg {
+  height: 16px;
+  width: 16px;
+  padding: 4px 12px;
+ }
 
-  padding-right: 5px;
-  padding-left: 5px;
-  padding-top: 20px;
-  padding-bottom: 20px;
+ #tab_plugin_speroplugin .buttons_item span {
+  font-weight: 600;
+ }
+
+ #tab_plugin_speroplugin .inlineText {
+
+  padding-top: 2px;
+
+  padding-left: 10px;
+  font-family: 'Arial';
+  font-style: normal;
+  font-weight:bold;
+  font-size: 17px;
+  line-height: 18px;
+  color: #5B5B5B;
+
+
 }
 
-#tab_plugin_speroplugin .device > div {
-  padding: 10px 30px;
+#tab_plugin_speroplugin .buttons-name {
+  font-size: 10px;
+
+
 }
 
-#tab_plugin_speroplugin #queues {
-  border: 1px solid;
-  top: 50%;
-  transform: translateY(25%);
+
+
+
+
+#tab_plugin_speroplugin .main-model .queue-container{
+  margin-top: 15px;
+  border-radius: 20px;
+
+  border-color: #3CAFEA;
+  border-width: 2px;
+  border-style: solid;
+  overflow: hidden;
+  height: 450px;
+  width: 100%;
+  background-color: #F9F9F9;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  
+ 
 }
 
-#tab_plugin_speroplugin .mainModal {
-  background-color: #f7f7f7;
-  border: 0.5px solid #f2f2f2;
-  border-radius: 5%;
+ #tab_plugin_speroplugin  .queue-container .queue-items{
+
+  color: #777777;
+  margin-left: 25px;
+  display: flex;
+  flex-direction: row;
+  margin-top: 11px;
+  margin-bottom: 15px;
+
+} 
+
+#tab_plugin_speroplugin .details{
+  
+  height: 10px;
+  margin-top: 10px;
+  margin-right: 95px;
+
 }
 
-#tab_plugin_speroplugin .no_device {
-  padding: 50px;
-}
 
-#tab_plugin_speroplugin .info {
-  padding: 20px;
-  margin: 5px;
-  font-size: 14px;
-  font-weight: bold;
-  transition: width 1s ease-in-out;
-}
+ 
 
-#tab_plugin_speroplugin .dot_disconnected {
-  margin-left: 5px;
-  margin-right: 5px;
-  height: 13px;
-  width: 13px;
-  background-color: #bbb;
-  border-radius: 50%;
-  display: inline-block;
-}
 
-#tab_plugin_speroplugin .dot_error {
-  margin-left: 5px;
-  margin-right: 5px;
-  height: 13px;
-  width: 13px;
-  background-color: firebrick;
-  border-radius: 50%;
-  display: inline-block;
-}
+ #tab_plugin_speroplugin  .queue-container .queue-items svg{
+  height: 36px;
+  width: 30px;
+  margin-top: 0px;
+  cursor: pointer;
+  margin-left: 52px;
 
-#tab_plugin_speroplugin .queue_box {
-  background-color: aquamarine;
-  margin: 30px;
-}
+ }
+   #tab_plugin_speroplugin  .queue-container .pause_and_resume{
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+ }
 
-#tab_plugin_speroplugin .queue_header {
-  border-bottom: 1px solid grey;
-}
 
-#tab_plugin_speroplugin .gcode_box {
-  background-color: orangered;
-  margin: 30px;
-}
+ 
 
-#tab_plugin_speroplugin .queue_container {
-  padding: 15px;
-}
 
-#tab_plugin_speroplugin .state {
-  display: grid;
-  grid-template-rows: auto auto auto;
-  height: 100%;
-}
 
-#tab_plugin_speroplugin .controll {
-  height: 100%;
-  display: grid;
-  grid-template-rows: 1fr 3fr;
-}
 
-#tab_plugin_speroplugin .state_text {
-  color: rgb(49, 104, 177);
-  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
-    "Lucida Sans", Arial, sans-serif;
-  font-size: 14px;
-}
 
-#tab_plugin_speroplugin .details {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  gap: 5px;
+
+ 
+
+ #tab_plugin_speroplugin  .queue-container .selectbox{
+  width: 50%;
+  padding-left:25px;
+  padding-right:25px;
+  background-color: #F9F9F9;
+  align-items: center;
+  justify-content: center;
+ }
+
+
+ #tab_plugin_speroplugin  .queue-container  svg{
+
+  height: 24px;
+  width: 24px;
+ }
+ #tab_plugin_speroplugin .queue_container {
+
+  color: #5B5B5B;
+
+  border-width: 1px;
+  margin-left: 23px;
+  margin-right: 17px;
+  margin-top: 7px;
+  padding-bottom: 10px;
+   
 }
 
 #tab_plugin_speroplugin .queue-row-container {
-  width: 100%;
+  margin-left: 16px;
+  font-size: 13px;
   display: flex;
-  flex-wrap: nowrap;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: stretch;
+  flex: 1;
 }
-#tab_plugin_speroplugin .queue-inner-row-container {
+
+#tab_plugin_speroplugin .queue-inner-row-container  {
   display: flex;
   flex-wrap: nowrap;
   flex-direction: row;
@@ -255,24 +237,241 @@
   align-items: stretch;
   width: 50%;
   flex-grow: 2;
+  margin-top: 10px;
+  
+
 }
-#tab_plugin_speroplugin .count-box {
-  min-width: 50px;
-  max-width: 50px;
-  max-height: 55px;
-  background-color:red;
-  border-radius: 99px;
+#tab_plugin_speroplugin .queue-inner-row-container svg {
+
+  margin-right: 1px;
+  height: 20px;
+  width: 20px;
+  
+
 }
-#tab_plugin_speroplugin .file-name {
-  flex-shrink: 10;
-  overflow-x: scroll;
-  white-space: nowrap;
-  max-width: 96%;
-  padding-top: 1px;
+#tab_plugin_speroplugin .queue-inner-row-container div {
+
+  margin-right: 8px;
+  
+
 }
-#tab_plugin_speroplugin .end-bundle {
-  flex-grow: 2;
-  overflow-x: scroll;
-  white-space: nowrap;
-  align-self: left;
+#tab_plugin_speroplugin .circle_state {
+  
+  height: 12px;
+  width: 12px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+  
+  
+
 }
+
+
+
+
+#tab_plugin_speroplugin .queue-inner-row-container .state_circle svg{
+
+  height: 12px;
+
+  width: 12px;
+}
+#tab_plugin_speroplugin .queue-inner-row-container .item_state {
+
+  border-radius: 6px;
+
+  background-color:#77777738;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+
+}
+#tab_plugin_speroplugin .queue-inner-row-container .list_svgs {
+  
+  margin-left: 437px;
+  position: absolute;
+
+}
+
+
+
+
+
+
+ #tab_plugin_speroplugin .queue-item-state {
+
+  background-color: #F5F5F5;
+  
+  margin-left: 240px;
+  padding-left: 24px;
+  padding-bottom: 8px;
+  padding-top: 0px;
+  padding-right: 28px;
+  border-radius: 11px;
+  font-family: Arial, Helvetica, sans-serif;
+  
+ }
+
+ #tab_plugin_speroplugin .queue_save_delete {
+  width: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+  margin-left: 16px;
+  font-size: 13px;
+ }
+ #tab_plugin_speroplugin .savebox {
+  width: 94%;
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: stretch;
+  margin-left: 14px;
+ 
+ }
+ #tab_plugin_speroplugin .create_part {          
+  height: 41px;
+ }
+
+ #tab_plugin_speroplugin .create_part  svg{
+  position: absolute;
+  height: 36px;
+  width: 30px;
+  margin-top: 11px;
+  cursor: pointer;
+  margin-left: -37px;
+ }
+
+
+ #tab_plugin_speroplugin  .queue_header {
+  border-bottom: 1px solid grey;
+  margin-top: 10px;
+}
+
+#tab_plugin_speroplugin  .text_queue {
+  width: 175px;
+  height: 23px;
+  border-radius: 7px;
+  border-color: #ccc;
+  margin-top: 13px;
+}
+
+
+#tab_plugin_speroplugin  .selected {
+  width: 220px;
+  background-color: #fff;
+  border: 2px solid #ccc;
+  margin-top: 12px;
+}
+
+
+#settings_plugin_speroplugin .main-model {
+  width: 100%;
+  background-color:#3CAFEA
+}
+
+#settings_plugin_speroplugin .form-horizontal {
+  
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  
+  border:1px;
+  border-color: #3CAFEA;
+  border-width: 2px;
+  width: 99%;
+  border-style: solid;
+  overflow: hidden ;
+  font-family: 'Arial';
+  font-style: normal;
+}
+
+#settings_plugin_speroplugin .form-title {
+    
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  padding-left: 28px;
+  
+  margin-bottom: 10px;
+  background-color:#3CAFEA;
+  border:1px;
+  border-color: #3CAFEA;
+  border-width: 2px;
+  border-style: solid;
+  overflow: hidden ;
+  color: white;
+  font-family: 'Arial';
+  font-style: normal;
+  font-weight:bold;
+}
+
+
+#settings_plugin_speroplugin .form-horizontal .input-control.labels {
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 20px;
+}
+
+
+
+
+#settings_plugin_speroplugin .check_button {
+font-size: 14px;
+font-weight: normal;
+line-height: 20px;
+border-color: #3CAFEA;
+color: #3CAFEA;
+}
+
+
+
+
+
+
+
+   
+
+
+
+   
+.ali {
+  color:red;
+}
+.veli{
+  color:green;
+}
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
