@@ -1,11 +1,11 @@
 # coding=utf-8
 from __future__ import absolute_import
-from enum import Enum
 from threading import Timer
 
 from flask.globals import request
 from octoprint.plugin.types import SettingsPlugin
 from octoprint.settings import settings
+from octoprint_speroplugin.PluginEnums import QueueState
 from tinydb.database import TinyDB
 from tinydb.queries import Query
 import copy
@@ -27,14 +27,6 @@ from octoprint.server.util.flask import (
 
 import octoprint.plugin
 
-class QueueState(Enum):
-    IDLE="IDLE"
-    STARTED="STARTED"
-    RUNNING="RUNNING"
-    CANCELLED="CANCELLED"
-    PAUSED="PAUSED"
-    FINISHED="FINISHED"
-
 
 class Speroplugin(octoprint.plugin.StartupPlugin,
                     octoprint.plugin.TemplatePlugin,
@@ -48,25 +40,23 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     FILE_DIR = None
 
     settingsParams = ["targetBedTemp","motorPin1","motorPin2","switchFront","switchBack","buttonForward","buttonBackword","buttonSequence","delaySeconds"]
+    
+    requiredDatas = ["queues","currentQueue","settings"]
 
     def __init__(self):
-        self.esp = dict()
         self.queues = []
-        self.queue_state = QueueState.IDLE
-        self.print_bed_state="Idle"
-        self.motor_state="Idle"
-        self.ejecting= False
-        self.eject_fail = False
-        self.connection = "False"
-        self.heat=60.00
-        self.bedTemp=60.00
-        self.current_index=0
-        self.index=None
-        self.eject_fail_continuous=False
+        self.queue_state = QueueState.IDLE  # queueState
+        self.print_bed_state="Idle"         # bedPosition -> middle front back
+        self.motor_state="Idle"             # motorState -> idle forward backward
+        # self.ejecting= False
+        # self.eject_fail = False
+        self.connection = "False"           #isShieldConnected
+       
+        self.current_index=0                #selectedItemIndex
+        # self.eject_fail_continuous=False
         self.control_eject=False
         self.last_queue=None
-        self.current_item = 'IDLE'
-        self.currentFiles = []
+        self.current_item = None
         self.sheiled_state="sa"
         self.total_estimated_time = -1
         self.queues_max=0
@@ -156,8 +146,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
             if event == "PrintDone":
                 self.message_to_js({'sendItemIndex':True,'itemResult':"ejecting"})
-                
-                self.waitting_tem() 
+                self.tryEject();
                 
      
       
@@ -170,7 +159,9 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         self.message_to_js(dict(print_bed_state=bed,motor_state=motor,eject_fail=eject_faill))
           
          
-    def waitting_tem(self):
+    def tryEject(self):
+        self.ejectState = "WAIT_FOR_Temp"
+        
         self.heat=self.bedTemp
         if self.bedTemp<=45:
             self.Ejecting()
@@ -675,29 +666,34 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         res.status_code = 200
         return res
     
-    
+    # get data for js
     @ octoprint.plugin.BlueprintPlugin.route("/get_current_states", methods=["GET"])
     @ restricted_access
     def get_current_states(self):
-
-        targetBedTemp = self._settings.get(["targetBedTemp"])
-        print(self.current_queue)
-        print("------------------------------------queqe------------------------")
-        queue = json.dumps(dict(queue=self.current_queue,
-                                total_estimated_time=self.total_estimated_time,
-                                queues=self.queues,
-                                queue_state=self.queue_state,
-                                current_index=self.current_index,
-                                current_files=self.currentFiles,
-                                esp=self.esp,
-                                print_bed_state=self.print_bed_state,
-                                eject_fail=self.eject_fail,
-                                motor_state=self.motor_state,
-                                ejecting=self.ejecting,
-                                connection=self.connection,
+        message ={}
+        for val in self.requiredDatas:
+            message[val]=getattr(self,val)
+        self.message_to_js(message)
+            
+        # targetBedTemp = self._settings.get(["targetBedTemp"])
+        # print(self.current_queue)
+        # print("------------------------------------queqe------------------------")
+        # self.message_to_js()
+        # queue = json.dumps(dict(queue=self.current_queue,
+        #                         total_estimated_time=self.total_estimated_time,
+        #                         queues=self.queues,
+        #                         queue_state=self.queue_state,
+        #                         current_index=self.current_index,
+        #                         current_files=self.currentFiles,
+        #                         esp=self.esp,
+        #                         print_bed_state=self.print_bed_state,
+        #                         eject_fail=self.eject_fail,
+        #                         motor_state=self.motor_state,
+        #                         ejecting=self.ejecting,
+        #                         connection=self.connection,
                                 
-                                ))
-        return queue
+        #                         ))
+        return 
     
    
    
@@ -888,16 +884,18 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     def sanitize_temperatures(self,comm_instance, parsed_temperatures, *args, **kwargs):
         x = parsed_temperatures.get('B')
         if x:
-            self.bedTemp=x[0]
-            self.message_to_js({'temp':self.bedTemp})
+            currentBedTemp = x[0]
+            if self.ejectState == "WAIT_FOR_TEMP":
+                self.checkBedTemp(currentBedTemp)
+            
         return parsed_temperatures
     
-    def checkBedTemp(self):
-        self.heat=self.bedTemp
-        if(self.heat<=45):
-            self.Ejecting()
-        else:
-            self.waitting_tem()
+    def checkBedTemp(self,currentBedTemp):
+        
+        if(currentBedTemp<=self.settings.get(["targetBedTemp"])):
+            self.startEject() # state -> Ejecting, 
+            self.message_to_js({'temp':currentBedTemp})
+       
             
  
 

@@ -20,7 +20,7 @@ $(function() {
         self.settings = parameters[4];
         self.temperature = parameters[5];
 
-
+        self.settings = ko.observable({}); 
         self.queues = ko.observableArray([]);
         self.currentItems = ko.observableArray([]);
         self.queue_id = ko.observable(null);
@@ -56,7 +56,7 @@ $(function() {
         self.currentIndex = ko.observable();
 
         self.total_estimated_time = ko.observable(0);
-
+        self.temp = ko.observable(0);
 
         self.pins=[23,18,4,8,2,6,3,10,40]
 
@@ -92,9 +92,8 @@ $(function() {
                 self.button_backward(),self.button_sequence()
                 data = getOnlyChangedData(localData, self.settings.lastReceivedSettings);
                 if(_.has(data,'plugins.speroplugin')){
+                    const changedSettings =  {...self.settings,..._.get(data,'plugins.speroplugin')??{}} 
      
-
-
                 
                     console.log(self.pins)
                     
@@ -120,7 +119,7 @@ $(function() {
                     
                     }
 
-                    
+                    console.log(data.plugins.speroplugin)
                     
                     let map = {};
                     let result = false;
@@ -376,142 +375,147 @@ $(function() {
       console.log('onDataUpdate',plugin,data)
 
 
-            if (plugin == "speroplugin") {
+            if (plugin == "speroplugin" && !_.isEmpty(data)) {
+                
                 try {
+                   Object.entries(data).forEach((v)=>{
+                        self[v[0]](v[1])
+                    })
+                    console.log('temp',self.temp())
 
-                if(data["eject_fail"] !=undefined) {
-                    console.log(data["eject_fail"])
+                // if(data["eject_fail"] !=undefined) {
+                //     console.log(data["eject_fail"])
                    
-                    if (data["eject_fail"]==true){
-                        var item = self.currentItems()[self.currentIndex()];
-                        item().state("Eject Failed");
-                        item().color("#F9F9F9");
+                //     if (data["eject_fail"]==true){
+                //         var item = self.currentItems()[self.currentIndex()];
+                //         item().state("Eject Failed");
+                //         item().color("#F9F9F9");
                         
-                        self.queue_state('PAUSED');
-                        self.queue_state=='PAUSED';
-                    }
+                //         self.queue_state('PAUSED');
+                //         self.queue_state=='PAUSED';
+                //     }
 
-                }      
+                // }      
 
-                if(data["motorPin1"] !=undefined) {
-                    console.log(data["motorPin1"]);
-                    self.motor_1(data["motorPin1"]);
-                }
-                if(data["print_bed_state"] !=undefined) {
-                    var tabla = data["print_bed_state"];
-                    self.client_position(tabla);
+                // if(data["motorPin1"] !=undefined) {
+                //     console.log(data["motorPin1"]);
+                //     self.motor_1(data["motorPin1"]);
+                // }
+                // if(data["print_bed_state"] !=undefined) {
+                //     var tabla = data["print_bed_state"];
+                //     self.client_position(tabla);
             
-                }
+                // }
 
 
-                if(data["print_bed_state"] !=undefined) {
-                    var tabla = data["print_bed_state"];
-                    self.client_position(tabla);
+                // if(data["print_bed_state"] !=undefined) {
+                //     var tabla = data["print_bed_state"];
+                //     self.client_position(tabla);
             
-                }
+                // }
 
            
              
                 
-                if(data["queue_finish"] !=undefined) {
-                    if (data["queue_finish"]=="yes"){
-                        console.log(data["queue_finish"]);
-                        console.log("asdpokj");
-                        self.queue_state('FINISHED');
-                        self.queue_state=='FINISHED';
-                    }
+                // if(data["queue_finish"] !=undefined) {
+                //     if (data["queue_finish"]=="yes"){
+                //         console.log(data["queue_finish"]);
+                //         console.log("asdpokj");
+                //         self.queue_state('FINISHED');
+                //         self.queue_state=='FINISHED';
+                //     }
 
-                }
-                if(data["cansel_queue"] !=undefined) {
-                    self.deneme2 = data["cansel_queue"];
-                    if (data["cansel_queue"] =="yes"){
-                        self.queue_state("IDLE");
-                        self.currentItems().forEach((element) => {
-                            element().state("Await");
-                            element().color("white");
-                        });
-                    }
-
-
-                }
+                // }
+                // if(data["cansel_queue"] !=undefined) {
+                //     self.deneme2 = data["cansel_queue"];
+                //     if (data["cansel_queue"] =="yes"){
+                //         self.queue_state("IDLE");
+                //         self.currentItems().forEach((element) => {
+                //             element().state("Await");
+                //             element().color("white");
+                //         });
+                //     }
 
 
-                if(data["motor_state"] !=undefined) {
-                    var motor = data["motor_state"];
-                    self.client_motor(motor) ;
-                }
+                // }
 
 
-                if(data["connection"] !=undefined) {
+                // if(data["motor_state"] !=undefined) {
+                //     var motor = data["motor_state"];
+                //     self.client_motor(motor) ;
+                // }
+
+
+                // if(data["connection"] !=undefined) {
                
-                    self.Connection(data["connection"]) ;
-                }
-                if(data["temp"] !=undefined) {
-                    var motor = data["temp"];
+                //     self.Connection(data["connection"]) ;
+                // }
+                // if(data["temp"] !=undefined) {
+                //     var motor = data["temp"];
          
-                    var message =
-                        data["temp"].toString() +
-                        " / " +
-                        self.target_temp.toString() +
-                        " C";
-                    self.item_info(message);
+                //     var message =
+                //         data["temp"].toString() +
+                //         " / " +
+                //         self.target_temp.toString() +
+                //         " C";
+                //     self.item_info(message);
 
 
                     
-                }
+                // }
 
                                           
-                if (data["isQueuePrinting"] != undefined) {
-                    self.isQueuePrinting(data["isQueuePrinting"]);
-                }
-                if (data["isManualEject"] != undefined) {
-                    self.isManualEject(data["isManualEject"]);
-                }
+                // if (data["isQueuePrinting"] != undefined) {
+                //     self.isQueuePrinting(data["isQueuePrinting"]);
+                // }
+                // if (data["isManualEject"] != undefined) {
+                //     self.isManualEject(data["isManualEject"]);
+                // }
 
 
-                if (data["index_current"]) {
+                // if (data["index_current"]) {
 
-                    self.currentIndex(data["index_current"]);
+                //     self.currentIndex(data["index_current"]);
 
-                }
-                if (data["itemResult"]) {
-                    console.log(data["itemResult"])
-                    self.Finished=data["itemResult"];
-                    var item = self.currentItems()[self.currentIndex()];
-                    item().state(data["itemResult"]);
-                    item().previous_state(data["itemResult"]);
+                // }
+                // if (data["itemResult"]) {
+                //     console.log(data["itemResult"])
+                //     self.Finished=data["itemResult"];
+                //     var item = self.currentItems()[self.currentIndex()];
+                //     item().state(data["itemResult"]);
+                //     item().previous_state(data["itemResult"]);
 
-                    if (data["itemResult"] == "Finished")
-                        item().color("#F9F9F9");
-                    if (data["itemResult"] == "Canceled")
-                        item().color("#F9F9F9");
+                //     if (data["itemResult"] == "Finished")
+                //         item().color("#F9F9F9");
+                //     if (data["itemResult"] == "Canceled")
+                //         item().color("#F9F9F9");
 
-                    item().timeLeft(0);
-                }
-                if (data["targetTemp"])
-                    self.target_temp = data["targetTemp"];
+                //     item().timeLeft(0);
+                // }
+                // if (data["targetTemp"])
+                //     self.target_temp = data["targetTemp"];
 
-                if (data["terminate"]) {
-                    self.terminating(data["terminate"]);
-                }
-                if (data["stop"]) {
-                    if (self.queue_state() == "CANCELED") {
-                        self.send_info("Queue canceled.", "danger");
-                    } else {
-                        self.send_info("Queue finished!", "success");
-                    }
-                    self.terminating(false);
-                    self.isQueueStarted(false);
-                    self.ejecting(false);
+                // if (data["terminate"]) {
+                //     self.terminating(data["terminate"]);
+                // }
+                // if (data["stop"]) {
+                //     if (self.queue_state() == "CANCELED") {
+                //         self.send_info("Queue canceled.", "danger");
+                //     } else {
+                //         self.send_info("Queue finished!", "success");
+                //     }
+                //     self.terminating(false);
+                //     self.isQueueStarted(false);
+                //     self.ejecting(false);
 
-                    self.currentItems().forEach((element) => {
-                        element().state("Await");
-                        element().color("white");
-                    });
+                //     self.currentItems().forEach((element) => {
+                //         element().state("Await");
+                //         element().color("white");
+                //     });
 
-                    self.currentIndex(0);
-                    self.queue_state("IDLE");
-                }
+                //     self.currentIndex(0);
+                //     self.queue_state("IDLE");
+                // }
 
                         
               }catch (error) {

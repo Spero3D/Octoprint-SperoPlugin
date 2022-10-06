@@ -17,7 +17,7 @@ GPIO.setmode(GPIO.BCM)
 
 
 class MotorService():
-
+   
    def __initMotor(self):
       global connectionn
 

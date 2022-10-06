@@ -10,6 +10,8 @@ import string
 from signal import pause
 
 class SheildControl:   
+    
+    onSequenceFinish:None
   
     def __initControl(self):
         if self._pin1 and self._pin2:
@@ -27,8 +29,6 @@ class SheildControl:
       self.is_in_sequence=False
       self.wait_timer= None
       self.control=False
-      self.sequence_finish=False
-      self.sequence_start=False
       self.motor_state='IDLE'
       self.tabla_state='IDLE'
       self.sequence = ['W','F','W','B','W','C','S']
@@ -124,7 +124,8 @@ class SheildControl:
         self.motor_service.goForward()
         waitTimer = Timer(1,self.stop,args=None,kwargs=None)
         waitTimer.start()
-        self.sequenceFinish=False
+        if self.onSequenceFinish:
+            self.onSequenceFinish()
         self.tablaState="IDLE"
  
  
