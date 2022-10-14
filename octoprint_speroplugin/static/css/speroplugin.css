@@ -174,7 +174,7 @@
   width: 30px;
   margin-top: 0px;
   cursor: pointer;
-  margin-left: 52px;
+  margin-right: 8px;
 
  }
    #tab_plugin_speroplugin  .queue-container .pause_and_resume{
@@ -369,6 +369,15 @@
 }
 
 
+#tab_plugin_speroplugin  .button_test {
+  width: 127px;
+  height: 20px;
+  background-color: rgb(240, 25, 25);
+  border: 2px solid rgb(61, 32, 190);
+  margin-top: 12px;
+}
+
+
 #settings_plugin_speroplugin .main-model {
   width: 100%;
   background-color:#3CAFEA
@@ -427,6 +436,20 @@ color: #3CAFEA;
 }
 
 
+#settings_plugin_speroplugin .warningText {
+  font-size: 15px;
+  font-weight: 100;
+  line-height: 136px;
+  border-color: #3CAFEA;
+  color: #0a0202;
+  }
+  
+  
+  
+  
+  
+  
+
 
 
 
@@ -435,18 +458,6 @@ color: #3CAFEA;
    
 
 
-
-   
-.ali {
-  color:red;
-}
-.veli{
-  color:green;
-}
-
-
-
- 
 
  
  

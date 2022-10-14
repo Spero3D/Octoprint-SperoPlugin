@@ -7,14 +7,16 @@ from lib2to3.pgen2.token import AWAIT
 
 class ItemState(Enum):
     
-    AWAIT="AWAIT"
-    PRINTING="PRINTING"
-    EJECTING="EJECTING"
-    EJECT_FAİL="EJECT_FAİL"
-    CANCELLED="CANCELLED"
-    PAUSED="PAUSED"
-    PAUSING="PAUSING"
-    FINISHED="FINISHED"
+    AWAIT="Await"
+    PRINTING="Printing"
+    EJECTING="Ejecting"
+    EJECT_FAIL="Eject_fail"
+    CANCELLED="Cancelled"
+    CANCELLING="Cancelling"
+    FAILLED="Failed"
+    PAUSED="Paused"
+    PAUSING="Pausing"
+    FINISHED="Finished"
 
 class QueueState(Enum):
     
@@ -46,9 +48,11 @@ class MotorState(Enum):
     BACKWORD="BACKWORD"
     
 class EjectState(Enum):
+    IDLE="IDLE"
     WAIT_FOR_TEMP="WAIT_FOR_TEMP"
     EJECTING="EJECTING"
-    EJECT_FAİL="EJECT_FAİL"
+    EJECTING_FINISHED="EJECTING_FINISHED"
+    EJECT_FAİL="EJECT_FAIL"
 
 
 
