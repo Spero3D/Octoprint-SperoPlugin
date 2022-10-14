@@ -288,7 +288,7 @@
 
 }
 #tab_plugin_speroplugin .queue-inner-row-container .list_svgs {
-  
+  cursor: pointer;
   margin-left: 437px;
   position: absolute;
 
