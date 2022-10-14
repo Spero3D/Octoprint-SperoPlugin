@@ -1,517 +1,329 @@
-/*
- * View model for OctoPrint-Speroplugin
+/*ted
+ * View model for OctoPrint-speroplugin
  *
  * Author: AHMET SARIOĞLU
  * License: AGPLv3
  */
 $(function() {
     function SperoViewModel(parameters) {
+        
 
         var self = this;
-        // var queueDirectories = fs.readdirSync(
-        //     "C:/devel/octoprint-speroplugin/octoprint-speroplugin/queues"
-        // );
-
-        self.index2 = ko.observable(null);
-        self.espState="as";
-        self.tablaState="sa"
-        self.motorStatee="sa";
-        self.kontrol=true;
-        self.target_temp = 40;
-        self.motor_1=15
-        self.motor_2 =18;
-        self.front_switch =27;
-        self.switch_back =22;
-        self.forward_button =2;
-        self.backworld_button =3;
-        self.Sequence_button =4;
-        self.min_Task =40;
-        self.queues_max =10;
-        self.seconds_delay =10;
-        self.eject_fail = ko.observable(false);
-        self.backworld = ko.observable(false);
-        self.stop = ko.observable(false);
-        self.Connection=ko.observable(null);
-        self.Connection(true);
-        self.pauseclickQueueNumber=ko.observable(null);
-        self.pauseclickQueueNumber(null);
-        self.PointerPause=ko.observable(null);
-        self.PointerPause(null);
-
-        self.deneme1="as";
+        self.selectedQueue = ko.observable();                               
+        self.temp=ko.observable(0)                                    
+        self.currentIndex=ko.observable(0)                             
+        self.bedPosition=ko.observable(0)
+        self.motorState=ko.observable(0)
+        self.isShieldConnected=ko.observable(0)
+        self.queueState=ko.observable("IDLE");
+        self.queueName = ko.observable(0);
+        self.queuesIndex=ko.observable(0);
+        self.currentQueue=ko.observable(0);
+        // self.currentQueueItems=ko.observableArray([]);
         
+        self.itemState=ko.observable();
+        self.targetBedTemp=ko.observable(0);
+
+        
+
+
         self.printerState = parameters[0];
         self.connectionState = parameters[1];
         self.loginState = parameters[2];
         self.files = parameters[3];
         self.settings = parameters[4];
         self.temperature = parameters[5];
-
-        self.option_key = ko.observable();
-        self.searchName = ko.observable();
-        self.changePointer=ko.observable();
-
+   
+        self.settings2 = ko.observable({});             //settings parametresi var diye setting2 diye adlandırdım gelen ayarları
         self.queues = ko.observableArray([]);
         self.currentItems = ko.observableArray([]);
-        self.queue_id = ko.observable(null);
-        self.queue_name = ko.observable(null);
-        self.queue_state = ko.observable("IDLE");
-
-        self.selectedQueue = ko.observable();
-        
-        self.stateMotorr = ko.observable();
-        
-        self.isQueueStarted = ko.observable(false);
-        self.isQueuePrinting = ko.observable(false);
-        self.isManualEject = ko.observable(false);
-
-        self.connection = ko.observable(false);
-        self.client_address = ko.observable(null);
-        self.client_state = ko.observable(null);
-        self.client_motor = ko.observable(null);
-        self.sheild_motor = ko.observable(null);
-        self.client_position = ko.observable(null);
-
-        self.item_info = ko.observable();
-        self.info_message = ko.observable();
-        self.pause_pointer = ko.observable();
-        self.info_color = ko.observable();
-
-        self.terminating = ko.observable(false);
-        self.ejecting = ko.observable(false);
-        self.eject_fail = ko.observable(false);
-
-        self.item_count = 0;0
-        self.target_temp = 40;
-        self.currentIndex = ko.observable();
-
+        self.queueId = ko.observable(null);
+        self.itemInfo = ko.observable();               //sıcaklık verisini jinjaya gönderme
+        self.itemCount = 0;                            //item sayısı                                   
         self.totalEstimatedTime = ko.observable(0);
-    
-        
+       
 
+
+        
+        self.settings.saveData = function (data, successCallback, setAsSending) {
+            var options;
+            var validated=true;
+            if (_.isPlainObject(successCallback)) {
+                options = successCallback;
+            } else {
+                options = {
+                    success: successCallback,
+                    sending: setAsSending === true
+                };
+            }
+            self.settings.settingsDialog.trigger("beforeSave");
+
+            self.settings.sawUpdateEventWhileSending = false;
+            self.settings.sending(data === undefined || options.sending || false);
+
+            if (data === undefined) {
+                // we also only send data that actually changed when no data is specified
+                var localData = self.settings.getLocalData();
+                console.log('localData',localData)
+                data = getOnlyChangedData(localData, self.settings.lastReceivedSettings);
+                if(_.has(data,'plugins.speroplugin')){
+
+                    if(data.plugins.speroplugin["targetBedTemp"] != undefined){               //degişim olan verileri değistirme
+                     self.settings2()["targetBedTemp"]=data.plugins.speroplugin["targetBedTemp"]
+                    }
+                    if(data.plugins.speroplugin["motorPin1"] != undefined){
+                        self.settings2()["motorPin1"]=data.plugins.speroplugin["motorPin1"] 
+                    }
+                    if(data.plugins.speroplugin["motorPin2"] != undefined){
+                            self.settings2()["motorPin2"]=data.plugins.speroplugin["motorPin2"]
+                    }
+                    if(data.plugins.speroplugin["switchFront"] != undefined){
+                        self.settings2()["switchFront"]=data.plugins.speroplugin["switchFront"]
+                    }
+                    if(data.plugins.speroplugin["switchBack"] != undefined){
+                           self.settings2()["switchBack"]=data.plugins.speroplugin["switchBack"] 
+                    }
+                    if(data.plugins.speroplugin["buttonForward"] != undefined){
+                               self.settings2()["buttonForward"]=data.plugins.speroplugin["buttonForward"]
+                    }
+                    if(data.plugins.speroplugin["buttonBackword"] != undefined){
+                        self.settings2()["buttonBackword"]=data.plugins.speroplugin["buttonBackword"]
+                    }
+                    if(data.plugins.speroplugin["buttonSequence"] != undefined){
+                           self.settings2()["buttonSequence"]=data.plugins.speroplugin["buttonSequence"] 
+                    }
+                    if(data.plugins.speroplugin["delaySeconds"] != undefined){
+                               self.settings2()["delaySeconds"]=data.plugins.speroplugin["delaySeconds"]
+                    }
+                          
+                      
+                  
+
+                    var settings2Array=Object.values(self.settings2())    // dict to list
+                               
+
+
+                    let toMap = {};
+                    let resultToReturn = false;
+                    for (let i = 0; i < 7; i++) {
+                        console.log(settings2Array[i]);
+                
+                        if (toMap[settings2Array[i]]) {
+                            console.log(settings2Array[i])
+                            resultToReturn = true;
+                            break;
+                        }                                                        //aynı elemanlar var mı                                                                
+                
+                        toMap[settings2Array[i]] = true;
+                    }
+                
+                    if (resultToReturn) {
+                        
+                        console.log('Duplicate elements exist');      
+                        validated=false
+                        }
+                    else {
+                        validated=true
+                        console.log('Duplicates dont exist ');
+                    }
+                   data.plugins.speroplugin.error =!validated;
+                    
+
+
+                            
+                  
+             
+
+
+
+
+
+         
+
+                    //TODO: check there is any validation issue
+                    // sorun varsa -> validated=false
+                    // sorun yoksa -> validated=true
+                 
+                    
+
+                }
+
+            }
+
+            // final validation
+            if (self.settings.testFoldersDuplicate()) {
+                // duplicate folders configured, we refuse to send any folder config
+                // to the server
+                delete data.folder;
+            }
+
+            self.settings.active = true;
+            return OctoPrint.settings
+                .save(data)
+                .done(function (data, status, xhr) {
+                    self.settings.ignoreNextUpdateEvent = !self.settings.sawUpdateEventWhileSending;
+                    self.settings.active = false;
+                    self.settings.receiving(true);
+                    self.settings.sending(false);
+
+                    try {
+                        self.settings.fromResponse(data);
+                        if(validated){
+                            if (options.success) options.success(data, status, xhr);
+
+                        }else{
+                            if (options.error) options.error(xhr, status, "Validation Error");
+                        }
+
+                    } finally {
+                        self.settings.receiving(false);
+                    }
+                })
+                .fail(function (xhr, status, error) {
+                    self.settings.sending(false);
+                    self.settings.active = false;
+                    if (options.error) options.error(xhr, status, error);
+                })
+                .always(function (xhr, status) {
+                    if (options.complete) options.complete(xhr, status);
+                });
+        };
+       
+ 
         self.onBeforeBinding = function () {
             try {
-                self.check_connection();
+                
+           
                 self.reload_plugin();
                 self.fileDatas();
-                self.sendPrinterState();
             } catch (error) {
                 console.log("onBeforeBinding => ", error);
+
             }
         };
-        self.start_queue = function () {
+        self.startQueue = function () {
             try {
-                
-                console.log("queueee starttttttttt");
-                console.log(self.motor_1);
-                console.log(self.motorStatee);
-                console.log(self.deneme1);
-                a=5;
-                self.Connection(true);
-                if (self.connection()) {
-                    self.isQueueStarted(true);
-                    self.terminating(false);
-                    if (
-                        a==5
-                    ) {
-                        self.fileDatas();
-                        self.currentItems().forEach((item) => {
-                        self.sendTimeData(item().index(), false);
-                        self.reload_plugin();
-                        });
-
-                        $.ajax({
-                            url:
-                                "plugin/speroplugin/start_queue?totalEstimatedTime=" +
-                                self.totalEstimatedTime(),
-                            method: "GET",
-                            dataType: "json",
-                            headers: {
-                                "X-Api-Key": UI_API_KEY,
-                            },
-                            data: {},
-                            success() {
-                                self.send_info("Queue started", "info");
-                                self.queue_state("STARTED");
-                                self.currentIndex(0);
-                                var totalTime = 0;
-                                self.currentItems().forEach((element) => {
-                                    totalTime += element().timeLeft();
-                                });
-                                self.totalEstimatedTime(parseInt(totalTime));
-                            },
-                        });
-                    } else {
-                        self.send_info(
-                            "Please connect an Sheild first.",
-                            "warning"
-                        );
-                    }
-                } else {
-                    self.send_info("Printer not connected.", "warning");
-                }
-            } catch (error) {
-                console.log("start_queue => ", error);
-            }
-        };
-        self.sendPrinterState = function () {
-            // setInterval(function () {
-            //     var disable = self.printerState.isBusy() ? 0 : 1;
-            //     var json = JSON.stringify({ disableEject: disable });
-            //     $.ajax({
-            //         url: "plugin/speroplugin/sendPrinterState",
-            //         method: "POST",
-            //         dataType: "json",
-            //         data: json,
-            //         headers: {
-            //             "X-Api-Key": UI_API_KEY,
-            //         },
-            //         success(r) {},
-            //     });
-            // }, 5000);
-        };
-
-        self.sendTerminateMessage = function () {
-            try {
-                if (self.isQueueStarted() && self.isQueuePrinting()) {
-                    if (self.queue_state != "IDLE") {
-                        self.ejecting(true);
-                        $.ajax({
-                            url: "plugin/speroplugin/sendTerminateMessage",
-                            method: "GET",
-                            dataType: "json",
-                            headers: {
-                                "X-Api-Key": UI_API_KEY,
-                            },
-                            success(r) {},
-                        });
-                    }
-                }
-            } catch (error) {
-                console.log("sendTerminateMessage error => ", error);
-            }
-        };
-
-        self.prev_check = function (index) {
-            try {
-                if (self.currentItems().length > 1) {
-                    let state = self.currentItems()[index - 1]().state();
-                    if (state == "Await") {
-                        return false;
-                    } else return true;
-                } else return true;
-            } catch (error) {
-                console.log("prev_check => ", error);
-            }
-        };
-
-        self.check_connection = function () {
-            try {
+                console.log("start_queue")                           
+                self.fileDatas();
+          
                 $.ajax({
-                    url: "/api/connection",
+                    url:
+                        "plugin/speroplugin/startQueue?totalEstimatedTime=" +
+                        self.totalEstimatedTime(),
                     method: "GET",
                     dataType: "json",
                     headers: {
                         "X-Api-Key": UI_API_KEY,
                     },
-                    success(r) {
-                     self.connection(true);
+                    data: {},
+                    success() {
+                      console.log("printStarted")
                     },
                 });
+                  
+           
+               
+               
             } catch (error) {
-                console.log("connection check error => ", error);
+                console.log("start_queue => ", error);
             }
-            b=5;
-            if(b==5);
-            self.Connection(true);
         };
 
-
-        self.check_is_busy = ko.computed(function () {
-            if (
-                self.isQueuePrinting() == false &&
-                self.printerState.isBusy() == true
-            ) {
-                return false;
-            } else {
-                return true;
-            }
-        }, self);
         
-        self.onDataUpdaterPluginMessage = function (plugin, data) { 
-            if (plugin == "speroplugin") {
-                try {
-            
-                    if(data["tablaState"] !=undefined) {
-                        var tabla = data["tablaState"];
-                        self.client_position(tabla);
+        self.pointer = function (index) {             // tıkladıgım pointerın indexsini döndürür
+            try {
               
-                    }
 
-                if(data["espState"] !=undefined) {
-                    var motor = data["espState"];
-                    self.client_motor(motor) ;
-                }
-
-                
-                if(data["canselQuee"] !="false") {
-                    self.deneme1=data["canselQuee"];
-
-                }
-
-                if(data["ahmet"] !=undefined) {
-                    self.deneme1=data["ahmet"];
-                }
-                if (data["index2"]) {
-                    self.index2(data["index2"]) ;
-                        }
-
-                if (data["isQueuePrinting"] != undefined) {
-                    self.isQueuePrinting(data["isQueuePrinting"]);
-                }
-                if (data["isManualEject"] != undefined) {
-                    self.isManualEject(data["isManualEject"]);
-                }
-                if (data["index"]) {
-                    self.currentIndex(data["index"]);
-                }
-                if (data["itemResult"]) {
-                    self.Finished=data["itemResult"];
-                    var item = self.currentItems()[self.currentIndex()];
-                    item().state(data["itemResult"]);
-                    item().previous_state(data["itemResult"]);
-
-                    if (data["itemResult"] == "Finished")
-                        item().color("darkseagreen");
-                    if (data["itemResult"] == "Canceled")
-                        item().color("lightcoral");
-
-                    item().timeLeft(0);
-                }
-                if (data["targetTemp"])
-                    self.target_temp = data["targetTemp"];
-
-                if (data["terminate"]) {
-                    self.terminating(data["terminate"]);
-                }
-                if (data["stop"]) {
-                    if (self.queue_state() == "CANCELED") {
-                        self.send_info("Queue canceled.", "danger");
-                    } else {
-                        self.send_info("Queue finished!", "success");
-                    }
-                    self.terminating(false);
-                    self.isQueueStarted(false);
-                    self.ejecting(false);
-
-                    self.currentItems().forEach((element) => {
-                        element().state("Await");
-                        element().color("white");
+                if (index > 0) {
+                    $.ajax({
+                        url: "plugin/speroplugin/pointer?index=" + index,
+                        type: "GET",
+                        dataType: "json",
+                        headers: { "X-Api-Key": UI_API_KEY },
+                        success: function (c) {},
+                        error: function () {},
                     });
-
-                    self.currentIndex(0);
-                    self.queue_state("IDLE");
                 }
+            } catch (error) {
+                console.log("pointer error => ", error);
+            }
+        };
+
+        self.onDataUpdaterPluginMessage = function (plugin, data) { 
+
+ 
+
+
+            if (plugin == "speroplugin" && !_.isEmpty(data)) {
+                
+                try {
+                   Object.entries(data).forEach((v)=>{
+                        self[v[0]](v[1])
+                    })
+                    // console.log('temp',self.temp());
+
+                    var message =
+                        self.temp().toString() +
+                        " / " +
+                        self.targetBedTemp().toString() +
+                        " C";
+                    self.itemInfo(message);
+                    // console.log(this.itemInfo())
+    
+                    
+                    
+                    // console.log('targetBedTemp',self.targetBedTemp());
+                    // console.log('currentIndex',self.currentIndex());
+                    // console.log('bedPosition',self.bedPosition());
+                    // console.log('motorState',self.motorState());
+                    // console.log('isShieldConnected',self.isShieldConnected());
+                    // console.log('queueState',self.queueState()); 
+              
+                    // console.log('queues',self.queues());
+                    // console.log('currentQueue',self.currentQueue());
+                    // console.log('settings',self.settings2())
+                    
+                   
+                    if(self.queueState()=="FINISHED"){
+                        self.itemState("Await");
+                        for(let i=0;i<self.currentItems().length;i++){
+                      
+                            var item = self.currentItems()[i];
+                            item().state(self.itemState());
+                      
+
+                    
+                         }
+                    }
+
+
+                   
+                    if (self.selectedQueue()==undefined){
+                        self.selectedQueue(self.currentQueue());
+
+                    }
+
+                    var item = self.currentItems()[self.currentIndex()];
+                    item().state(self.itemState());
+                    // self.currentQueueItems(self.currentItems()["items"])
+
+                    // console.log('currentQueueItems',self.currentQueueItems());
+
+                    if (self.queueState()=='IDLE'){
+                        for (let i = 0; i < self.currentQueue().length; i++){
+                            self.currentQueue()["items"][i]["state"] = "Await"
+
+
+                        }
+                    }
+
 
                         
               }catch (error) {
                 console.log("onDataUpdaterPluginMessage => ", error);
             }
-            } else
-            {
-                console.log("hata");
-            
-                
-                    
-                    // if (data["esp"] != undefined) {
-                    //     console.log(data["esp"] );
-                    //     self.client_state(data["esp"]["connection"]);
-                    //     self.client_address(data["esp"]["address"]);
-
-                    //     if (data["esp"]["motor"] != undefined) {
-                    //         var motor = data["esp"]["motor"];
-
-                    //         self.client_motor(motor);
-
-                    //         if (self.ejecting() == true) {
-                    //             self.item_info("Terminating...");
-                    //         }
-
-                    //         if (
-                    //             motor == "eject_done" ||
-                    //             motor == "eject_cancel"
-                    //         ) {
-                    //             self.item_info(null);
-                    //             self.ejecting(false);
-                    //             self.terminating(false);
-                    //         }
-                    //     }
-
-                    //     if (data["esp"]["position"] != undefined)
-                    //         self.client_position(data["esp"]["position"]);
-                    // }
-                    
-                    
-                    
-                    // console.log("*/*/*/*/*/*/*/*/*/*/*/*/*/*");
-                    // if (data["target_temp"])
-                    //     console.log(target_temp);
-                
-                    // if (data["motorPin1"])
-                    //     self.motor_1 = data["motorPin1"];
-
-                    
-                    // if (data["motorPin2"])
-                    //      self.motor_2 = data["motorPin2"];
-                    // if (data["switchFront"])
-                    //      self.front_switch = data["switchFront"];     
-
-                    // if (data["switchBack"])
-                    //      self.switch_back = data["switchBack"];
-
-                    // if (data["button_Forward"])
-                    // self.forward_button = data["button_Forward"];
-
-                    // if (data["buttonBackword"])
-                    //      self.backworld_button = data["buttonBackword"];
-
-                    // if (data["buttonSequence"])
-                    // self.Sequence_button = data["buttonSequence"];
-
-                    // if (data["minTaskTemp"])
-                    //      self.min_Task = data["minTaskTemp"];
-                    // if (data["maxQueues"])
-                    // self.queues_max = data["maxQueues"];
-
-                    // if (data["delaySeconds"])
-                    //      self.seconds_delay = data["delaySeconds"];
-                    // if (data["isQueuePrinting"] != undefined) {
-                    //         self.isQueuePrinting(data["isQueuePrinting"]);
-                    //     }
-                    // if (data["isManualEject"] != undefined) {
-                    //         self.isManualEject(data["isManualEject"]);
-                    //     }
-                    
-                    // if (data["itemResult"]) {
-                    //         var item = self.currentItems()[self.currentIndex()];
-    
-                    //         item().state(data["itemResult"]);
-                    //         item().previous_state(data["itemResult"]);
-    
-                    //         if (data["itemResult"] == "Finished")
-                    //             item().color("darkseagreen");
-                    //         if (data["itemResult"] == "Canceled")
-                    //             item().color("lightcoral");
-    
-                    //         item().timeLeft(0);
-                    //     }
-                    //     if (data["targetTemp"])
-                    //         self.target_temp = data["targetTemp"];
-                    //     if (data["printStart"])
-                    //         console.log("*-*-*-*-*-*-*-*-*-*-*-**************************-*-*-----------------")
-                    //         self.reload_items();
-    
-                    //     if (data["terminate"]) {
-                    //             self.terminating(data["terminate"]);
-                    //         }
-                    //     if (data["stop"]) {
-                    //         if (self.queue_state() == "CANCELED") {
-                    //                 self.send_info("Queue canceled.", "danger");
-                    //         } else {
-                    //                 self.send_info("Queue finished!", "success");
-                    //         }
+            }
         
-                    //         self.terminating(false);
-                    //         self.isQueueStarted(false);
-                    //         self.ejecting(false);
-        
-                    //         self.currentItems().forEach((element) => {
-                    //             element().state("Await");
-                    //             element().color("white");
-                    //         });
-        
-                    //             self.currentIndex(0);
-                    //             self.queue_state("IDLE");
-                    //     }
-                    //        //deneme bölümü
-                    //     if (data["eject_fail"] != undefined) {
-                    //         self.eject_fail(data["eject_fail"]);
-                    //         console.log("Eject fail = ", data["eject_fail"]);
-                    //         if (data["eject_fail"] == false) {
-                    //             self.item_info(null);
-                    //         } else {
-                    //             self.item_info("Ejecting failed!");
-                    //         }
-                    //     }
-                    //     if (data["esp"]["position"] != undefined)
-                    //     self.client_position(data["esp"]["position"]);
-
-            }
-        };
-        self.temperature.bedTemp["actual"].subscribe(function (data) {
-            try {
-                if (
-                    
-                    self.isQueueStarted() &&
-                    self.isQueuePrinting() &&
-                    !self.isManualEject()
-                ) {
-                    console.log();
-                    var isEmpty = self.check_empty("current_queue");
-                    if (!isEmpty) {
-                        var itemState = self
-                            .currentItems()
-                            [self.currentIndex()]()
-                            .state();
-                        if (
-                            itemState == "Cancelling" ||
-                            itemState == "Finishing"
-                        ) {
-                            if (self.ejecting() == true) return;
-                            if (
-                                data > self.target_temp &&
-                                self.ejecting() == false
-                            ) {
-                                var message =
-                                    "Bed Temp : " +
-                                    data.toString() +
-                                    " / " +
-                                    self.target_temp.toString() +
-                                    " C";
-                                self.item_info(message);
-                            } else if (
-                                data <= self.target_temp &&
-                                self.ejecting() == false
-                            ) {
-                                self.sendTerminateMessage();
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                console.log("temp bedtemp error => ", error);
-            }
-        });
-        self.onEventStart = function (payload) {
-            try {
-
-                if (self.isQueueStarted() && self.isQueuePrinting()) {
-                    self.terminating(false);
-                    self.queue_state("RUNNING");
-                    self.send_info(this.sheild_motor)
-                    
-               
-                }
-            } catch (error) {
-                console.log("resume print event error => ", error);
-            }
-        };
-        self.onEvent = function (payload) {
-            try {
-                console.log("asdajfdhoaosdujflshnbaşljfbnaLSFDBIAQOSBGDKLAHSBDKJALHBVKHWRsKHŞDB")
-            } catch (error) {
-                console.log("resume print event error => ", error);
-            }
         };
 
 
@@ -519,20 +331,15 @@ $(function() {
 
 
 
-        self.pause_stop_queue = function (index) {
+        self.front = function () {
             try {
          
-                console.log(self.pauseclickQueueNumber);
-                self.PointerPause(true);
-                self.changePointer(false);
-                console.log("pause ye basıldı");
-                self.queue_state('PAUSED');
-                self.queue_state=='PAUSED';
+                console.log("eject");
+        
 
-                
-
+          
                     $.ajax({
-                        url: "plugin/speroplugin/pause_stop_queue",
+                        url: "plugin/speroplugin/front",
                         method: "GET",
                         dataType: "json",
                         headers: {
@@ -548,42 +355,39 @@ $(function() {
             }
         };
 
-        self.ejectFinish =function(){
-            setTimeout(() => { console.log(self.currentItems()); }, 3000);
-            console.log(self.currentItems());
-           
-            if(self.deneme1=="Finished"){
-                var item = self.currentItems()[self.currentIndex()];
-                    self.terminating(true);
-                    item().state("Finished");
-                    item().color("darkseagreen");
-               
-            }
-            else
-            {
-                setTimeout(() => { console.log(self.Finished); }, 3000);
-                self.ejectFinish();
+
+
+
+        self.pauseStopQueue = function (index) {
+            try {
+                console.log("pause ye basıldı");
+
+                    $.ajax({
+                        url: "plugin/speroplugin/pauseStopQueue",
+                        method: "GET",
+                        dataType: "json",
+                        headers: {
+                            "X-Api-Key": UI_API_KEY,
+                        },
+                        data: {},
+                        success: function () {},
+                    });
+                    
                 
-
+            } catch (error) {
+                console.log("pause resume queue error => ", error);
             }
+        };
 
 
-
-
-
-            }
-        
-
-        self.cancel_queue = function () {
+        self.cancelQueue = function () {
             try {
 
                 console.log("Cansel la basıldı")
-                self.queue_state('CANCELLED');
-                self.queue_state=='CANCELLED';
                 
 
                 $.ajax({
-                    url: "plugin/speroplugin/cancel_queue",
+                    url: "plugin/speroplugin/cancelQueue",
                     method: "GET",
                     dataType: "json",
                     headers: {
@@ -595,81 +399,74 @@ $(function() {
                 console.log("cancel queue error => ", error);
             }
         };
-        self.pause_resume_queue = function () {
+        self.pauseResumeQueue = function () {
             try {
-                console.log("playe ye basıldı")
-                self.queue_state('PRINTING');
-                self.queue_state=='PRINTING';
-                self.PointerPause(false);
-                // if (self.isQueueStarted()) {
-                //     if (self.connection()) {
-                //         if (self.queue_state() == "RUNNING") {
-                //             self.queue_state("PAUSED");
-                //             self.send_info("Queue paused.", "info");
-                //         } else if (self.queue_state() == "PAUSED") {
-                //             self.send_info("Queue resumed", "info");
-                //             self.queue_state("RUNNING");
-                //         }
-
-                        $.ajax({
-                            url: "plugin/speroplugin/pause_resume_queue",
-                            method: "GET",
-                            dataType: "json",
-                            headers: {
-                                "X-Api-Key": UI_API_KEY,
-                            },
-                            data: {},
-                            success: function () {},
-                        });
-                    }catch (error) {
-                console.log("pause resume queue error => ", error);
-            }
-        };
-
-        self.get_queue = function (id) {
-            try {
-                console.log("Our queue id is =>=> ", id);
+                console.log("play press");
                 $.ajax({
-                    url: "plugin/speroplugin/get_queue?id=" + id,
+                    url: "plugin/speroplugin/pauseResumeQueue",
                     method: "GET",
                     dataType: "json",
                     headers: {
                         "X-Api-Key": UI_API_KEY,
                     },
-                    success() {
-                        ko.utils.arrayFirst(self.queues(), function (item) {
-                            var reload =
-                                self.queue_state() == "IDLE"
-                            if (item.id == id) {
-                                console.log(item);
-
-                                self.queue_id(item.id);
-                                self.queue_name(item.name);
-
-                                var queue = self.reload_items(
-                                    item.items,
-                                    (reload = reload)
-                                );
-                                console.log("Array get successfull!");
-                                return queue;
-                            }
-                        });
-                    },
+                    data: {},
+                    success: function () {},
                 });
-            } catch (error) {
-                console.log("get_queue => ", error);
-            }
-        }; self.selectedQueue.subscribe(function (q) {
+            }catch (error) {
+            console.log("pause resume queue error => ", error);
+        }
+    };
+
+        self.getQueue = function (id) {              // queue itemleri atıyor
+            if(self.queueState()=='IDLE'){
+                 try {
+                
+               
+
+                    console.log("Our queue id is =>=> ", id);
+                    $.ajax({
+                        url: "plugin/speroplugin/getQueue?id=" + id,
+                        method: "GET",
+                        dataType: "json",
+                        headers: {
+                            "X-Api-Key": UI_API_KEY,
+                        },
+                        success() {
+                            ko.utils.arrayFirst(self.queues(), function (item) {
+                                var reload =
+                                    self.queueState() == "IDLE"
+                                if (item.id == id) {
+                                    self.queueId(item.id);
+                                    self.queueName(item.name);
+
+                                    var queue = self.reload_items(
+                                        item.items,
+                                        (reload = reload)
+                                    );
+                                    console.log("Array get successfull!");
+                                    return queue;
+                                }
+                            });
+                        },
+                    });
+                } catch (error) {
+                    console.log("getQueue => ", error);
+                }
+        }};
+        self.selectedQueue.subscribe(function (q) {
             if (q != undefined || q != null) {
-                self.get_queue(q.id);
+            
+                self.getQueue(q.id);
+                self.queueName(q.name)
+                self.queuesIndex(q.index)
+                
+            
+           
+                
             }
         });
-        self.stateMotorr.subscribe(function (q) {
-            if (q != undefined || q != null) {
-                self.client_motor(item.esp["motor"]);
-            }
-        });
-        self.device_controll = function (data) {
+
+        self.deviceControl = function (data) {
             try {
                 if (self.eject_fail() == true) {
                     self.eject_fail(false);
@@ -684,7 +481,7 @@ $(function() {
                 }
                 json = JSON.stringify({ request: data });
                 $.ajax({
-                    url: "plugin/speroplugin/device_controll",
+                    url: "plugin/speroplugin/deviceControl",
                     method: "POST",
                     contentType: "application/json",
                     dataType: "json",
@@ -694,15 +491,18 @@ $(function() {
                     data: json,
                 });
             } catch (error) {
-                console.log("device_controll => ", error);
+                console.log("deviceControl => ", error);
             }
         };
+
+
+
         $(document).ready(function () {
             try {
                 let regex =
                     /<div class="btn-group action-buttons">([\s\S]*)<.div>/im;
                 let template =
-                    '<div class="btn btn-mini bold" data-bind="click: function() { $root.file_ad_item_ahmet($data) }" title="Add To Queue" ><i></i>P</div>';
+                    '<div class="btn btn-mini bold" data-bind="click: function() { $root.fileAdItem($data) }," title="Add To Queue" ><i></i>P</div>';
 
                 $("#files_template_machinecode").text(function () {
                     var return_value = $(this).text();
@@ -719,23 +519,8 @@ $(function() {
             }
         });
 
-        self.check_empty = function (type) {
-            try {
-                var list = [];
 
-                if (type == "queues") list = self.queues();
-                if (type == "current_queue") list = self.currentItems();
-
-                if (list != null && list != undefined) {
-                    if (list.length > 0) return false;
-                    else return true;
-                } else return true;
-            } catch (e) {
-                console.log("check_empty => ", e);
-            }
-        };
-
-        self.check_printing = function () {
+        self.checkPrinting = function () {
             try {
                 var have_print = false;
 
@@ -754,116 +539,11 @@ $(function() {
             }
         };
 
-        self.onEventError = function (payload) {
-            try {
-                if (self.isQueueStarted() && self.isQueuePrinting()) {
-                    if (self.queue_state() != "IDLE") {
-                        var item = self.currentItems()[self.currentIndex()];
-
-                        if (item().state() != "Cancelling") {
-                            self.terminating(false);
-                            item().state("Failed");
-                            item().color("lightcoral");
-                            self.queue_state("PAUSED");
-
-                            self.send_info(
-                                "Error occurs while printing!",
-                                "Danger"
-                            );
-                        }
-                    }
-                }
-            } catch (error) {
-                console.log("onEventError error => ", error);
-            }
-        };
-
-        self.onEventDisconnected = function (payload) {
-            try {
-                if (self.isQueueStarted() && self.isQueuePrinting()) {
-                    if (self.queue_state() != "IDLE") {
-                        var item = self.currentItems()[self.currentIndex()];
-
-                        if (
-                            item().state() != "Cancelled" ||
-                            item().state() != "Cancelling"
-                        ) {
-                            self.terminating(false);
-                            self.isQueuePrinting(false);
-
-                            item().state("Failed");
-                            item().color("lightcoral");
-                            self.queue_state("PAUSED");
-
-                            self.send_info("Printer disconnected!", "danger");
-                        }
-                    } else self.connection(false);
-                }
-            } catch (error) {
-                console.log("disconnect event error => ", error);
-            }
-        };
-
-        self.onEventPrintResumed = function (payload) {
-            try {
-                if (self.isQueueStarted() && self.isQueuePrinting()) {
-                    self.terminating(false);
-                    self.queue_state("PAUSED");
-    
-                }
-            } catch (error) {
-                console.log("resume print event error => ", error);
-            }
-        };
-
-        self.onEventPrintDone = function (payload) {
-            try {
-                console.log("print doneeeeeeeeeeeeeeeeeeeeeeeee");
-                console.log(self.motorStatee);
-                console.log(self.client_motor());
-                console.log(self.deneme1);
-
-                if (self.isQueueStarted() && self.isQueuePrinting()) {
-                    var item = self.currentItems()[self.currentIndex()];
-                    self.terminating(true);
-                    item().state("Finishing");
-                    item().color("#bfd9bf");
-                    
-                }
-            } catch (error) {
-                console.log("print done event error => ", error);
-            }
-        };
-
-        self.onEventPrintCancelled = function (payload) {
-            try {
-                if (self.isQueueStarted() && self.isQueuePrinting()) {onEventPrintDone
-                    item().color("#f7bbbb");
-
-                    if (self.queue_state() != "CANCELED")
-                        self.queue_state("PAUSED");
-                }
-            } catch (error) {
-                console.log("print cancel event error => ", error);
-            }
-        };
-
-        self.onEventConnected = function (payload) {
-            try {
-                self.terminating(false);
-                self.connection(true);
-            } catch (error) {
-                console.log("connect event error => ", error);
-            }
-        };
 
         self.printerState.printTime.subscribe(function (data) {
             try {
-                if (self.isQueueStarted() && self.isQueuePrinting()) {
-                    if (
-                        self.currentIndex() != null &&
-                        self.queue_state() != "IDLE"
-                    ) {
+              
+                   {
                         if (data != null || data != undefined) {
                             self.currentItems()
                                 [self.currentIndex()]()
@@ -875,142 +555,89 @@ $(function() {
                                 );
 
                             self.totalPrintTime();
-
                             self.sendTimeData();
                         }
                     }
-                }
+                
             } catch (error) {
                 console.log("print time subscription => ", error);
             }
         });
+
       
         self.printerState.stateString.subscribe(function (state) {
             try {   
             
-                if (self.isQueueStarted() && self.isQueuePrinting()) {
+            
+                if (self.queueState != "IDLE") {
+                    var item = self.currentItems()[self.currentIndex()];
                     if (
-                    
-                        self.check_empty("current_queue") == false &&
-                        self.currentIndex() != null
+                        state != "Operational" &&
+                        state != "Finished" &&
+                        state != "Cancelled"
                     ) {
-                        if (self.queue_state != "IDLE") {
-                            var item = self.currentItems()[self.currentIndex()];
-                            if (
-                                state != "Operational" &&
-                                state != "Finished" &&
-                                state != "Cancelled"
-                            ) {
-                                switch (state) {
-                                    case "Printing":
-                                        self.terminating(false);
-                                        item().color("bisque");
-                                        item().state(state);
-                                        if (self.queue_state() != "PAUSED")
-                                            self.queue_state("RUNNING");
-                                        break;
-                                    case "Pausing":
-                                        self.terminating(true);
-                                        item().color("lightgrey");
-                                        item().state(state);
-                                        self.queue_state("PAUSING");
-                                        break;
-                                    case "Paused":
-                                        self.terminating(false);
-                                        item().color("lightgrey");
-                                        item().state(state);
-                                        self.queue_state("PAUSED");
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
+                        switch (state) {
+                            case "Printing":
+                                
+                                item().color("#F9F9F9");
+                                item().state(state);
+                                if (self.queueState() != "PAUSED")
+                                    self.queueState("RUNNING");
+                                break;
+                            case "Pausing":
+                                item().color("#F9F9F9");
+                                item().state(state);
+                                self.queueState("PAUSING");
+                                break;
+                            case "Paused":
+                                item().color("#F9F9F9");
+                                item().state(state);
+                                self.queueState("PAUSED");
+                                break;
+                                
+                            case "Eject Faild":
+                                item().color("red");
+                                item().state(state);
+                                self.queueState("EJECT FAILD");
+                                break;
+
+                            case "Resummed":
+                                    self.terminating(false);
+                                    item().color("red");
+                                    item().state(state);
+                                    self.queueState("RUNNING");
+                                    break;
+
+
+                            case "Cancelled":
+                                item().color("red");
+                                item().state(state);
+                                self.queueState("CANCELLED");
+                                break;
+                            default:
+                                break;
                         }
                     }
                 }
+                
+                
             } catch (error) {
                 console.log("printerState => ", error);
             }
         });
 
-
-
-
-
-
-
-
-
-
-
-        self.totalPrintTime = function () {
-            try {
-                var totalTime = 0;
-                self.currentItems().forEach((element) => {
-                    totalTime += parseInt(element().timeLeft());
-                });
-                self.totalEstimatedTime(totalTime);
-            } catch (error) {
-                console.log("totalPrintTime error => ", error);
-            }
-        };
-
-        self.check_removed = function () {
-            try {
-                if (
-                    (self.queue_id() == undefined || self.queue_id() == null) &&
-                    (self.queue_name() == null ||
-                        self.queue_name() == undefined)
-                ) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } catch (e) {
-                console.log("check_empty => ", e);
-            }
-        };
-
-
-
-
-        self.changePointer = function () {
-            try {
-                if (
-                    self.changePointer() == true
-                ) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } catch (e) {
-                console.log("check_empty => ", e);
-            }
-        };
-        self.Pointer_Pause = function () {
-            try {
-                if (
-                    self.PointerPause() == true
-                ) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } catch (e) {
-                console.log("check_empty => ", e);
-            }
-        };
-        self.queue_item_add = function (data) {
+    
+        self.queueAddItem = function (data) {
             try {
                 self.check_add_remove("add", data.item);
 
                 var jsonData = JSON.stringify({
-                    index: self.item_count - 1,
+                    index: self.itemCount - 1,
                     item: data.item,
                 });
 
                 $.ajax({
-                    url: "plugin/speroplugin/queue_add_item",
+                    url: "plugin/speroplugin/queueAddItem",
                     type: "POST",
                     contentType: "application/json",
                     dataType: "json",
@@ -1027,52 +654,58 @@ $(function() {
                 console.log("item add error ==> ", error);
             }
         };
-        self.files.file_ad_item_ahmet = function (data) {
+        self.files.fileAdItem = function (data) {
             try {
-                if (self.check_removed() != true) {
-                    var sd = "true";
-                    if (data.origin == "local") {
-                        sd = "false";
-                    }
-                    
-                    var item = {
-                        name: data.name,
-                        path: data.path,
-                        timeLeft: data.gcodeAnalysis.estimatedPrintTime,
-                        sd: sd,
-                    };
+                var sd = "true";
+                if (data.origin == "local") {
+                    sd = "false";
+                } 
+                
+                var item = {
+                    name: data.name,
+                    path: data.path,
+                    timeLeft: data.gcodeAnalysis.estimatedPrintTime,
+                    sd: sd,
+                };
 
-                    self.queue_item_add({
-                        item,
-                    });
-                } else {
-                    self.send_info("Create a queue first!", "danger");
-                }
+                self.queueAddItem({
+                    item,
+                });
+                
             } catch (e) {
                 console.log("File add item error => ", e);
             }
         };
-        self.save_to_database = function () {
+        self.saveToDataBase = function (val,e) {
+
+           
+            const newName = e.target.value??'';
+            console.log(newName)
+            console.log(self.selectedQueue())
+            console.log(self.queues())
+            console.log(self.queuesIndex())
+         
             try {
-                var name = JSON.stringify({
-                    queue_name: self.queue_name(),
-                    id: self.queue_id(),
-                });
                 $.ajax({
-                    url: "plugin/speroplugin/save_to_database",
+                    url: "plugin/speroplugin/saveToDataBase",
                     method: "POST",
                     contentType: "application/json",
                     dataType: "json",
                     headers: {
                         "X-Api-Key": UI_API_KEY,
                     },
-                    data: name,
-                    success() {
-                        self.send_info(
-                            "Queue saved in to database.",
-                            "success"
-                        );
+                    data: JSON.stringify({
+                        queueName: newName,
+                        id: self.selectedQueue().id,
+                        index:self.queuesIndex()
 
+                    }),
+                    success() {
+                        
+                        self.queueName(newName)
+                   
+
+                        console.log("----------reload----------")
                         self.reload_plugin();
                     },
                 });
@@ -1080,27 +713,11 @@ $(function() {
                 console.log("save_to_database => ", error);
             }
         };
-        self.check_empty = function (type) {
-            try {
-                var list = [];
-
-                if (type == "queues") list = self.queues();
-                if (type == "current_queue") list = self.currentItems();
-
-                if (list != null && list != undefined) {
-                    if (list.length > 0) return false;
-                    else return true;
-                } else return true;
-            } catch (e) {
-                console.log("check_empty => ", e);
-            }
-        };
-
 
         
         self.reload_items = function (items = [], reload = false) {
             try {
-                self.item_count = items.length;
+                self.itemCount = items.length;
                 var templist = [];
 
                 items.forEach((e) => {
@@ -1114,20 +731,20 @@ $(function() {
                         color: ko.observable(
                             !reload
                                 ? e.state == "Printing"
-                                    ? "bisque"
-                                    : e.state == "Finishing"
-                                    ? "#bfd9bf"
+                                    ? "#F9F9F9"
+                                    : e.state == "Ejecting"
+                                    ? "#F9F9F9"
                                     : e.state == "Finished"
-                                    ? "darkseagreen"
+                                    ? "#F9F9F9"
                                     : e.state == "Cancelling"
-                                    ? "#f7bbbb"
+                                    ? "#F9F9F9"
                                     : e.state == "Canceled" ||
                                       e.state == "Failed"
-                                    ? "lightcoral"
+                                    ? "#F9F9F9"
                                     : e.state == "Paused"
-                                    ? "lightgrey"
-                                    : "white"
-                                : "white"
+                                    ? "#F9F9F9"
+                                    : "#F9F9F9"
+                                : "#F9F9F9"
                         ),
                     });
                     templist.push(temp);
@@ -1139,168 +756,39 @@ $(function() {
             }
         };
 
-
-        self.change_position=function(){
-        cansol.log("motor poz change")
-        if (item.esp["motor"] != undefined)
-        self.client_motor(item.esp["motor"]);
-
-
-       }
-
-
-        
         self.reload_plugin = function () {
+
+       
             try {
                 $.ajax({
-                    url: "plugin/speroplugin/get_current_states",
+                    url: "plugin/speroplugin/sendStartDatas",
                     type: "GET",
                     dataType: "json",
                     headers: {
                         "X-Api-Key": UI_API_KEY,
                     },
                     success: function (item) {
-                        self.queue_state("IDLE");
-                        self.item_count = 0;
-                        self.currentIndex(0);
-                        if (item.totalEstimatedTime != undefined)
-                            self.totalEstimatedTime(item.totalEstimatedTime);
-
-
-                        self.sheild_motor=='idle';
-                        if (item.queues) {
-                            self.queues([]);
-                            item.queues.forEach((element) => {
-                                self.queues.push(element);
-                            });
-                        }
-                        
-                        if (item.motor_1) {
-                            self.motor_1=item.motor_1
-                        }
-                        if (item.espState) {
-                            self.motorStatee=item.espState;
-                            self.client_motor(item.espState);
-                        }
-
-                        if (item.tablaState) {
-                            self.client_position(item.tablaState);
-                        }
-                        if (item.isQueueStarted) {
-                            self.isQueueStarted(item.isQueueStarted);
-                        }
-
-                        if (item.isQueuePrinting) {
-                            self.isQueuePrinting(item.isQueuePrinting);
-                        }
-
-                        if (item.isManualEject) {
-                            self.isManualEject(item.isManualEject);
-                        }
-
-                        if (item.esp) {
-                            self.stateMotorr=self.client_motor(item.esp["motor"]);
-                            self.client_address(item.esp["address"]);
-                            self.client_state(item.esp["connection"]);
-                            if (item.esp["motor"] != undefined)
-                            self.client_motor(item.esp["motor"]);
-                            if (item.esp["position"] != undefined)
-                                self.client_position(item.esp["position"]);
-                        }
-                        if(item.espState){
-                            self.client_motor(item.espState);
-
-                        }
-                        if (item.queue_state != undefined)
-                            self.queue_state(item.queue_state);
-                        if (item.current_index != undefined) {
-                            self.currentIndex(item.current_index);
-                        }
-
-                        if (item.terminating != undefined) {
-                            self.terminating(item.terminating);
-                        }
-                        if (item.ejecting != undefined)
-                            self.ejecting(item.ejecting);
-                        if (item.eject_fail != undefined) {
-                            self.eject_fail(item.eject_fail);
-                            console.log(item.eject_fail);
-                          
-                        }
-
-                        if (item.queue != undefined) {
-                            self.selectedQueue(item.queue);
-                            self.currentItems([]);
-
-                            console.log(
-                                item.queue["id"],
-                                item.queue["name"],
-                                item.queue["items"]
-                            );
-
-                            if (item.queue != undefined && item.queue != null) {
-                                self.queue_name(item.queue["name"]);
-                                self.queue_id(item.queue["id"]);
-
-                                if (item.queue["items"] != undefined) {
-                                    if (item.queue["items"].length > 0) {
-                                        self.reload_items(item.queue["items"]);
-                                    }
-                                }
-                            } else {
-                                self.queue_name(null);
-                                self.queue_id(null);
-                                self.currentItems(null);
-                            }
-                        }
-                        if (item.target_temp)
-                            self.target_temp = item.target_temp;
+                       
                     },
                 });
             } catch (error) {
                 console.log("reload_plugin => ", error);
             }
-        };
-
-        self.send_info = function (message, type) {
+        };    
+        self.createQueue = function () {
             try {
-                self.info_message(message);
-                switch (type) {
-                    case "info":
-                        self.info_color("powderblue");
-                        break;
-                    case "warning":
-                        self.info_color("gold");
-                        break;
-                    case "danger":
-                        self.info_color("lightcoral");
-                        break;
-                    case "success":
-                        self.info_color("darkseagreen");
-                        break;
-                    default:
-                        break;
-                }
-
-                setTimeout(function () {
-                    self.info_message(null);
-                }, 3000);
-            } catch (error) {
-                console.log("send info error => ", error);
-            }
-        };
-        self.create_queue = function () {
-            try {
+                // self.queueState('IDLE');
+                // self.queueState=='IDLE';
                 $.ajax({
-                    url: "/plugin/speroplugin/create_queue",
+                    url: "/plugin/speroplugin/createQueue",
                     type: "GET",
                     dataType: "json",
                     headers: {
                         "X-Api-Key": UI_API_KEY,
                     },
                     success: function (r) {
+                    
                         self.reload_plugin();
-                        self.send_info("Queue created.", "success");
                     },
                     error: function (e) {
                         console.log(e);
@@ -1313,7 +801,7 @@ $(function() {
         self.check_add_remove = function (type, data) {
             try {
                 if (type == "add") {
-                    var index = self.item_count;
+                    var index = self.itemCount;
                     var temp = ko.observable({
                         index: ko.observable(index),
                         name: ko.observable(data.name),
@@ -1321,10 +809,10 @@ $(function() {
                         timeLeft: ko.observable(data.timeLeft),
                         state: ko.observable("Await"),
                         previous_state: ko.observable(""),
-                        color: ko.observable("white"),
+                        color: ko.observable("#F9F9F9"),
                     });
                     self.currentItems.push(temp);
-                    self.item_count += 1;
+                    self.itemCount += 1;
                 }
                 if (type == "remove") {
                     self.currentItems.remove(self.currentItems()[data]);
@@ -1333,18 +821,18 @@ $(function() {
                             element().index(element().index() - 1);
                         }
                     });
-                    self.item_count -= 1;
+                    self.itemCount -= 1;
                 }
             } catch (error) {
                 console.log("check_add_remove => ", error);
             }
         };
 
-        self.queue_item_remove = function (data) {
+        self.queueRemoveItem = function (data) {
             try {
                 self.check_add_remove("remove", data);
                 $.ajax({
-                    url: "plugin/speroplugin/queue_remove_item?index=" + data,
+                    url: "plugin/speroplugin/queueRemoveItem?index=" + data,
                     type: "DELETE",
                     dataType: "text",
                     headers: {
@@ -1372,7 +860,7 @@ $(function() {
                                 item().state() != "Canceled" &&
                                 item().state() != "Cancelling";
                             var isNotFinish =
-                                item().state() != "Finishing" &&
+                                item().state() != "Ejecting" &&
                                 item().state() != "Finished";
 
                             data.files.forEach((file) => {
@@ -1451,27 +939,7 @@ $(function() {
                 console.log("sendTimeData => ", error);
             }
         };
-        self.queue_item_restart = function (index) {
-            try {
-                if (self.connection() && self.isQueueStarted()) {
-                    self.fileDatas(index);
-                    self.sendTimeData((customIndex = index));
-                    $.ajax({
-                        url: "plugin/speroplugin/queue_item_restart?index=" + index,
-                        type: "GET",
-                        dataType: "json",
-                        headers: { "X-Api-Key": UI_API_KEY },
-                        success: function () {
-                            self.queue_state("RUNNING");
-                        },
-                    });
-                } else {
-                    self.send_info("Printer not connected!", "warning");
-                }
-            } catch (error) {
-                console.log("queue_item_restart error => ", error);
-            }
-        };
+    
         self.totalPrintTime = function () {
             try {
                 var totalTime = 0;
@@ -1508,13 +976,13 @@ $(function() {
                 console.log("toHHMMSS error ==> ", error);
             }
         };
-        self.queue_item_down = function (index) {
+        self.queueItemDown = function (index) {
             try {
                 if (index < self.currentItems().length - 1) {
                     self.row_change_items("down", index);
 
                     $.ajax({
-                        url: "plugin/speroplugin/queue_item_down?index=" + index,
+                        url: "plugin/speroplugin/queueItemDown?index=" + index,
                         type: "GET",
                         dataType: "json",
                         headers: { "X-Api-Key": UI_API_KEY },
@@ -1523,7 +991,7 @@ $(function() {
                     });
                 }
             } catch (error) {
-                console.log("queue_item_down error => ", error);
+                console.log("queueItemDown error => ", error);
             }
         };
         self.row_change_items = function (type, index) {
@@ -1545,12 +1013,12 @@ $(function() {
                 console.log("row change items error => ", error);
             }
         };
-        self.queue_item_up = function (index) {
+        self.queueItemUp = function (index) {
             try {
                 if (index > 0) {
                     self.row_change_items("up", index);
                     $.ajax({
-                        url: "plugin/speroplugin/queue_item_up?index=" + index,
+                        url: "plugin/speroplugin/queueItemUp?index=" + index,
                         type: "GET",
                         dataType: "json",
                         headers: { "X-Api-Key": UI_API_KEY },
@@ -1559,64 +1027,24 @@ $(function() {
                     });
                 }
             } catch (error) {
-                console.log("queue_item_up error => ", error);
+                console.log("queueItemUp error => ", error);
             }
         };
-
-        self.pointer = function (index) {
-            try {
-              
-                const el= document.getElementById(index);
-                el.classList.add("headText3");
-                for(let i=0;i<index;i++){
-                    b=document.getElementById(i);
-                    b.classList.add("headText4");
-
-                }
-
-                for(let i=index;i<25;i++){
-                    b=document.getElementById(i);
-                    b.classList.add("headText5");
-
-                }
-
-
-
-
-
-                self.changePointer(true);
-                console.log("pointer")
-                self.pause_pointer(index);
-                self.pauseclickQueueNumber(index);
-                console.log(self.pauseclickQueueNumber());
-                
-                if (index > 0) {
-                    $.ajax({
-                        url: "plugin/speroplugin/pointer?index=" + index,
-                        type: "GET",
-                        dataType: "json",
-                        headers: { "X-Api-Key": UI_API_KEY },
-                        success: function (c) {},
-                        error: function () {},
-                    });
-                }
-            } catch (error) {
-                console.log("pointer error => ", error);
-            }
-        };
-
 
 
 
 
 
         self.sayhello = function () {
+         
             console.log("Hello!");
+
         };
-        self.queue_item_duplicate = function (data) {
+        self.queueItemDuplicate = function (data) {
             try {
+                console.log("asjhkdlbsad")
                 $.ajax({
-                    url: "plugin/speroplugin/queue_duplicate_item?index=" + data,
+                    url: "plugin/speroplugin/queueItemDuplicate?index=" + data,
                     type: "GET",
                     dataType: "text",
                     headers: {
@@ -1632,11 +1060,11 @@ $(function() {
         };
         self.delete_from_database = function () {
             try {
-                if (self.queue_id() != undefined || self.queue_id() != null);
+                if (self.queueId() != undefined || self.queueId() != null);
                 $.ajax({
                     url:
-                        "plugin/speroplugin/delete_from_database?id=" +
-                        self.queue_id(),
+                        "plugin/speroplugin/deleteFromDatabase?id=" +
+                        self.queueId(),
                     method: "DELETE",
                     dataType: "json",
                     headers: {
@@ -1644,20 +1072,17 @@ $(function() {
                     },
                     data: {},
                     success() {
-                        self.send_info("Queue successfully removed.", "info");
 
-                        self.queue_name(null);
-                        self.queue_id(null);
+                        self.queueName(null);
+                        self.queueId(null);
                         self.currentItems(null);
 
                         self.reload_plugin();
-                        setTimeout(function () {
-                            self.info_message(null);
-                        }, 3000);
+                        
                     },
                 });
             } catch (error) {
-                console.log("delete_from_database => ", error);
+                console.log("deleteFromDatabase => ", error);
             }
 
 
@@ -1709,17 +1134,11 @@ $(function() {
         };
         };
         
-        // assign the injected parameters, e.g.:
-        // self.loginStateViewModel = parameters[0];
-        // self.settingsViewModel = parameters[1];infoitem_info
 
-        // TODO: Implement your plugin's view model here.
+
     }
 
-    /* view model class, parameters for constructor, container to bind to
-     * Please see http://docs.octoprint.org/en/master/plugins/viewmodels.html#registering-custom-viewmodels for more details
-     * and a full list of the available options.
-     */
+
     OCTOPRINT_VIEWMODELS.push({
         construct: SperoViewModel,
         // ViewModels your plugin depends on, e.g. loginStateViewModel, settingsViewModel, ...
