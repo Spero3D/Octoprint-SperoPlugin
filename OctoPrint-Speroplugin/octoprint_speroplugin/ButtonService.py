@@ -2,7 +2,7 @@ from time import time
 import RPi.GPIO as GPIO 
 from gpiozero import Button
 from signal import pause
-from .MotorService import MotorService, MotorState
+from .MotorService import MotorService
 
 
 class ButtonService():
@@ -18,8 +18,7 @@ class ButtonService():
     onBackwardPressed = None
     onButtonsReleased =None 
 
-    a="a"
-    a=MotorState.getState()
+   
     
     def __onHeldUtility(self):
         if self.onLongPressed:
@@ -35,31 +34,20 @@ class ButtonService():
     def __onPressedForword(self):
         print("Pressed Forward")
         if self.onForwardPressed:
-            a=MotorState.getState()
-            if a=="MotorState.IDLE":
-                self.onForwardPressed()
+            self.onForwardPressed()
 
     def __onReleasedForword(self):
         print("Realesed Forward")
         if self.onButtonsReleased:
-            a=MotorState.getState()
-            print(a)
-            if a=="MotorState.FORWARD":
-             self.onButtonsReleased()
+            self.onButtonsReleased()
 
     def __onPressedBackword(self):
         
         if self.onBackwardPressed:
-            a=MotorState.getState()
-            print(a)
-            if a=="MotorState.IDLE":
-             self.onBackwardPressed()
+            self.onBackwardPressed()
 
     def __onReleasedBackword(self):
         if self.onButtonsReleased:
-            a=MotorState.getState()
-            print(a)
-            if a=="MotorState.BACKWARD":
              self.onButtonsReleased()
 
 
@@ -69,19 +57,18 @@ class ButtonService():
         self.__thresholdUtility = hold_time
         if _pin1:
             self.pinUtility = _pin1
-            self.__buttonUtility = Button(_pin1,pull_up=True, hold_time=hold_time)
+            self.__buttonUtility = Button(_pin1, hold_time=hold_time)
             self.__buttonUtility.when_held = self.__onHeldUtility
-            self.__buttonUtility.when_pressed = self.__onPressedUtility
-            self.__buttonUtility.when_released = self.__onReleasedUtility
+            self.__buttonUtility.when_pressed = self.__onReleasedUtility
+            self.__buttonUtility.when_released = self.__onPressedUtility
 
         if _pin2:
-           
             self.pinForword = _pin2
-            self.__buttonForword = Button(_pin2,pull_up=True)
-            self.__buttonForword.when_pressed = self.__onPressedForword
-            self.__buttonForword.when_released = self.__onReleasedForword
+            self.__buttonForword = Button(_pin2)
+            self.__buttonForword.when_pressed = self.__onReleasedForword
+            self.__buttonForword.when_released = self.__onPressedForword
         if _pin3:
             self.pinBackword = _pin3
-            self.__buttonBackword = Button(_pin3,pull_up=True)
-            self.__buttonBackword.when_pressed = self.__onPressedBackword
-            self.__buttonBackword.when_released = self.__onReleasedBackword
+            self.__buttonBackword = Button(_pin3)
+            self.__buttonBackword.when_pressed = self.__onReleasedBackword
+            self.__buttonBackword.when_released = self.__onPressedBackword

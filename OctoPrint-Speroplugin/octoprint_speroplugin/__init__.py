@@ -1,9 +1,8 @@
 # coding=utf-8
 from __future__ import absolute_import
 from asyncio import queues
-from re import search
 from threading import Timer
-
+from .SheildControl import SheildControl
 from flask.globals import request
 from octoprint.plugin.types import SettingsPlugin
 from octoprint.settings import settings
@@ -12,10 +11,9 @@ from tinydb.database import TinyDB
 from tinydb.queries import Query
 import copy
 from octoprint.filemanager.storage import StorageInterface as storage
-# from .SheildControl import SheildControl
+
 import os
 import flask
-import json
 import uuid
 import datetime
 ""
@@ -30,6 +28,8 @@ from octoprint.server.util.flask import (
 import octoprint.plugin
 
 
+
+
 class Speroplugin(octoprint.plugin.StartupPlugin,
                     octoprint.plugin.TemplatePlugin,
                     octoprint.plugin.SettingsPlugin,
@@ -42,10 +42,11 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     FILE_DIR = None
 
     settingsParams = ["motorPin1","motorPin2","switchFront","switchBack","buttonForward","buttonBackword","buttonSequence","targetBedTemp","delaySeconds"]
+    sheildControl=None
     
     requiredDatas = ["settings2","currentIndex","bedPosition",'motorState','isShieldConnected','queueState','currentQueue',
                     'itemState',    ]
-
+ 
     def __init__(self):
         self.queues = []
         self.queueState = QueueState.IDLE.value  # queueState
@@ -53,10 +54,8 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         self.motorState=MotorState.IDLE.value            # motorState -> idle forward backward
         self.ejectState=EjectState.IDLE.value               #eject durumları
         self.itemState=ItemState.AWAIT.value                #item durumları
-        
-        
-        self.currentIndex=0                              #queuenin o anki indexsi
-        self.isShieldConnected = "DISCONNECT"           #isShieldConnected
+        self.currentIndex=0                           #queuenin o anki indexsi
+        self.isShieldConnected = "Disconnect"           #isShieldConnected
         self.currentQueue=None                          #su anki queue
         self.currentQueueItem = None                    #secilen veya en son kalan queue nin item dizisi
         self.totalEstimatedTime = 0                     #priniting olan itemin basım zamanı
@@ -66,10 +65,10 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                     
         self.change=None    #cancelling yaparken state değişikliğini tetikletmek için 
 
-
  
     def on_startup(self, host, port):
-          
+        
+       
         fileDir = os.path.join(self.ROOT_DIR,"queues.json")
         fileExist = os.path.exists(fileDir)
         if not fileExist:
@@ -77,43 +76,56 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         self.db = TinyDB(fileDir)
         return super().on_startup(host, port)
 
-    
+  
     def on_after_startup(self):  
+        # self.SheildControl.buttonInit()
+      
         self.setSettings()                    #set settings fonksiyonu setting jinjasından verileri çeken fonksiyon save ettikten sonra tekrar
+        self.sheildControl=SheildControl(int(self.settings2["buttonForward"]),int(self.settings2["buttonBackword"]),int(self.settings2["buttonSequence"]),int(self.settings2["motorPin1"]),int(self.settings2["motorPin2"]),int(self.settings2["switchFront"]),int(self.settings2["switchBack"]),int(self.settings2["delaySeconds"]))
+        self.onTablaStartPosition()  
                                             #tetikleniyor bu yüzden on startup içinde değilll
         self.queues=self.db.all()
        
-            
-          
-        # self.sheild_control=SheildControl(self.buttonForward,self.buttonBackword,self.buttonSequence,self.motorPin1,self.motorPin2,self.switchBack,self.switchFront)
-        # self.sheild_control.on_state_change = self.get_states
+        search=Query() 
+        self.currentQueue=self.db.get(search.last=="last_queue")                           #db den en son queue suan ki queue atadım
         
-  
-        search=Query()
-        result = self.db.get(search.last=="last_queue")
-        self.currentQueue=result                           #db den en son queue suan ki queue atadım
-        
-        self._logger.info("KİNG İS HEREEE (more: %s)" % self._settings.get(["url"]))
-        self.message_to_js({'settings':self.settings2,'currentIndex':self.currentIndex,'bedPosition':self.bedPosition,
+        self.messageToJs({'settings':self.settings2,'currentIndex':self.currentIndex,'bedPosition':self.bedPosition,
                             'motorState':self.motorState,'isShieldConnected':self.isShieldConnected,
                             'queueState':self.queueState,'currentQueue':self.currentQueue,'itemState':self.itemState,})
-     
+
+        
+        self.sheildControl.onStateChange = self.getStates
+        self.isShieldConnected=self.sheildControl.connectionSheild
+        self.sheildControl.buttonInit()
+        
+        
+        
+    def onTablaStartPosition(self):
+        if self.bedPosition=="Back":
+            print("position avalible")
+        else:
+            print("forward")
+            self.sheildControl.forward()
+            waitTimer4 = Timer(0.5,self.sheildControl.backward,args=None,kwargs=None)
+            waitTimer4.start()
+            print("time up")
+            
+        
      
     def setSettings(self):                         #settings jinjadan verileri çeken fonks
         self.settings2 = {}
         for val in self.settingsParams:
-            
             self.settings2[val] = self._settings.get([val])
-            print(self._settings.get([val]))
-    
+                 
+     
 
-                   
     def on_event(self, event, payload):                     #event durumları
         state = self._printer.get_state_id()
-       
+        
+
         if state == "CANCELLING":
             self.itemState=ItemState.CANCELLING.value
-            self.message_to_js({'itemState':self.itemState})
+            self.messageToJs({'itemState':self.itemState})
                 
                 
         if event == "Disconnected" or event == "Error":
@@ -130,11 +142,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         if event == "DisplayLayerProgress_progressChanged":
             if self.itemState != "Ejecting" and self.itemState != "Cancelled":
                 self.itemState=ItemState.PRINTING.value
-
-    
-        
-          
-         
+            
 
         if event == "PrintFailed" or event == "PrintCanceled":
             self.change="yes" #anlık kontrol ettiği için kullanıcı state değişmeden tetikleyebilir bu yüzden kontrol
@@ -142,90 +150,91 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
            
             
             
-            
         if event == "PrinterStateChanged" and self.queueState != "PAUSED":
             if self.change=="yes":
                 self.queueState = QueueState.CANCELLED.value
                 self.itemState=ItemState.FAILLED.value
-                self.message_to_js({'queueState':self.queueState,'itemState':self.itemState})
+                self.messageToJs({'queueState':self.queueState,'itemState':self.itemState})
                 self.change="no"
             
             state = self._printer.get_state_id()
 
         if event == "PrintDone":
-            print("printtttttt dpneeeeeeeeeeeeeeeeeeee")
             self.ejectState=EjectState.WAIT_FOR_TEMP.value
             self.itemState=ItemState.EJECTING.value
             self.tryEject()
     
-        self.message_to_js({'itemState': self.itemState,'queueState':self.queueState})
+        self.messageToJs({'itemState': self.itemState,'queueState':self.queueState})
                 
                 
           
-    def get_states(self,bed,motor,ejectFaill):           #raspi baglı durumlar için bu yüzden şuan yorum satırında
-        print("ahmet")
-        
-        # if ejectFaill==True:
-        #     self.currentQueueItem["state"] = "PAUSED"
-        # self.bedPosition=bed
-        # self.motorState=motor
-        # self.ejectFail=ejectFaill
-        # self.message_to_js(dict(bedPosition=bed,motorState=motor,ejectFail=ejectFaill))
+    def getStates(self,bed,motor,ejectFaill):           #raspi baglı durumlar için bu yüzden şuan yorum satırında
+        if ejectFaill==True and self.queueState!="STARTED" and self.queueState!="IDLE":
+            self.itemState=ItemState.EJECT_FAIL.value
+            self.queueState=QueueState.PAUSED.value
+    
+            if self.currentIndex+1==self.currentQueue["items"].__len__():
+                self.doItemsStateAwait()
+            self.messageToJs({'itemState':self.itemState,'queueState':self.queueState})    
+   
+        self.bedPosition=bed
+        self.motorState=motor 
+        self.ejectFail=ejectFaill
+        self.messageToJs({'bedPosition':self.bedPosition,'motorState':self.motorState})
+ 
           
          
     def tryEject(self):                                 #eject için uygun sıcaklıgı saplamak için 
         self.ejectState = EjectState.WAIT_FOR_TEMP.value
-        
+     
                 
     
     def startEject(self):  
-        print("start eject")
+        self.sheildControl.startSequence()
         self.ejectState=EjectState.EJECTING.value
         self.waitingEject()
         
         
         
     def waitingEject(self):                             
-        print(self.ejectState)
         if self.ejectState =="EJECTING_FINISHED":
-            # self.controlEject=self.sheild_control.sequence_finish
-            print("eject finished") 
+            # self.controlEject=self.sheildControl.sequenceFinish
                                 
             self.itemState=ItemState.FINISHED.value
             if self.queueState=='RUNNING':
                 self.currentIndex=self.currentIndex+1
             
-            print(self.currentIndex)   
-            self.message_to_js({'itemState':self.itemState,'currentIndex':self.currentIndex})
+            self.messageToJs({'itemState':self.itemState,'currentIndex':self.currentIndex})
         
 
             if(self.queueState=="CANCELLED"):
                 self.currentIndex=0
-                self.message_to_js({'currentIndex':self.currentIndex} )
+                self.messageToJs({'currentIndex':self.currentIndex} )
                 self.doItemsStateAwait()
                            
             if self.currentIndex==self.currentQueue["items"].__len__():
                 self.queueState="FINISHED"
                 self.currentIndex=0
-                self.message_to_js({'itemState':self.itemState,'currentIndex':self.currentIndex})
+                self.messageToJs({'itemState':self.itemState,'currentIndex':self.currentIndex})
                 self.doItemsStateAwait()
             
             
             self.nextItem() 
         else:
-            wait_timer2 = Timer(1,self.waitingEject,args=None,kwargs=None)
-            wait_timer2.start()
-  
-            
+           
+            if self.sheildControl.state=="IDLE":
+                self.itemState=ItemState.FINISHED.value
+                self.ejectState=EjectState.EJECTING_FINISHED.value
+                self.messageToJs({'itemState':self.itemState})
+      
+            waitTimer2 = Timer(1,self.waitingEject,args=None,kwargs=None)
+            waitTimer2.start()      
     
     def nextItem(self):            #eject biitikten sonra queuenin statine göre bir sonraki işlem
-        print(self.queueState)
         if self.queueState == "RUNNING":
 
             if(self.queueState == "RUNNING" and self.ejectState!="EJECT_FAIL"):
-                print(self.currentIndex)
-                self.message_to_js({'currentIndex':self.currentIndex})
-                print("startPRint")
+                self.messageToJs({'currentIndex':self.currentIndex})
                 self.startPrint()   
             else:
                 print("print and queue finish") 
@@ -235,8 +244,8 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             
     def doItemsStateAwait(self) :   #queuenin bittigi ya da cancel olduğu durumlarda queuenin butun itemlerini Awaitte cekmek için 
             
-            self.queueState=QueueState.FINISHED.value
-            self.message_to_js({'queueState':self.queueState})
+            self.queueState=QueueState.IDLE.value
+            self.messageToJs({'queueState':self.queueState})
         
 
     def startPrint(self, canceledIndex=None):
@@ -263,11 +272,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                 else:
                     is_from_sd = False
 
-            self.currentQueueItem=queue[self.currentIndex]  
-
-                 
-           
-            self.print_file=self.currentQueueItem    
+            self.print_file=queue[self.currentIndex]   
             self._printer.select_file(self.print_file["path"], is_from_sd)  
             self._printer.start_print()     
                  
@@ -276,8 +281,8 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         return dict(
             motorPin1=23,
             motorPin2=18,
-            switchFront=4,
-            switchBack=8,
+            switchFront=27,
+            switchBack=22,
             buttonForward=2,
             buttonBackword=6,
             buttonSequence=3,
@@ -293,7 +298,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         return super().on_settings_save(data)
         
 
-    def message_to_js(self,message):
+    def messageToJs(self,message):
         self._plugin_manager.send_plugin_message(self._identifier, message)          
        
         
@@ -306,24 +311,21 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
         # ~~ Softwareupdate hook
 
-   
-
     @ octoprint.plugin.BlueprintPlugin.route("/saveToDataBase", methods=["POST"])
     @ restricted_access
     def saveToDataBase(self):
         data = flask.request.get_json()
         Exist = Query()
        
-        queue_id = data["id"]
+        queueId = data["id"]
         name = data["queueName"]  if data["queueName"]  != "" or data["queueName"]  != None else "New Queue"
         items = self.currentQueue["items"] if self.currentQueue["items"] !=None else []
         index=data["index"]
-        selectedQueue=data["index"]
-        self.queues[selectedQueue]["name"]=name
+        self.queues[data["index"]]["name"]=name
                                                         #queueyi yaratırken bir index numarasu atadım burdada last queue kelimesini atıyorum sadece
                                                         #birine digerlerinde none on startup tada last_queue yazısının indexsini bulup selected queue yapıyp
     
-        inDb = self.db.search(Exist.id == queue_id)
+        inDb = self.db.search(Exist.id == queueId)
         item = Query()
         last_db=self.db.search(item.last == "last_queue")
         
@@ -340,11 +342,11 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                 'name':name,
                 'updateTime':str(datetime.datetime.now()),
                 'last':"last_queue"
-            },Exist.id==queue_id)
+            },Exist.id==queueId)
         else:
             self.db.insert({
                     'items': items,
-                    'id': queue_id,
+                    'id': queueId,
                     'updateTime':str(datetime.datetime.now()),
                     'createTime':str(datetime.datetime.now()),
                     'name': name,
@@ -352,10 +354,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                     'last':"last_queue",
                 })
             
-            
-            
-           
-
         # self._settings.set(["speroplugin_currentQueue"], json.dumps(self.currentQueue))
         # self._settings.save()
 
@@ -385,40 +383,31 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         res = jsonify(success=True, data="time done")
         res.status_code = 200
         return res
-    @ octoprint.plugin.BlueprintPlugin.route("/deviceControl")
+    @ octoprint.plugin.BlueprintPlugin.route("/deviceControl", methods=["POST"])
     @ restricted_access
     def deviceControl(self):
+        
         data = flask.request.get_json()  
-        # if (data["request"]):
-            # self.sheild_control.send_actions(data["request"])
+        if (data["request"]):
+            self.sheildControl.sendActions(data["request"])
 
             
         res = jsonify(success=True)
         res.status_code = 200
         return res    
 
-             
-    
     @ octoprint.plugin.BlueprintPlugin.route("/deleteFromDatabase", methods=["DELETE"])
     @ restricted_access
     
     def deleteFromDatabase(self):
         
-        queue_id = flask.request.args.get("id")
+        queueId = flask.request.args.get("id")
         self.currentQueue = None
 
         Exist = Query()
-        result = self.db.get(Exist.id==queue_id)
-        
-        
-        print(result['index'])
-        print(result)
-        print(self.queues)
-        
-        
+        result = self.db.get(Exist.id==queueId)
         self.queues.pop(result['index'])
-        self.db.remove(Exist.id == queue_id)
-
+        self.db.remove(Exist.id == queueId)
 
         res = jsonify(success=True)
         res.status_code = 200
@@ -429,8 +418,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     @ restricted_access
     
     def sayhello(self):
-
-
 
         res = jsonify(success=True)
         res.status_code = 200
@@ -452,12 +439,11 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             self.currentQueue["items"][index - 1] = itemCurr
 
 
-        res = jsonify(success=True)
+        res = jsonify(success=True) 
         res.status_code = 200
         return res
     
-           
-    
+
     @ octoprint.plugin.BlueprintPlugin.route("/pauseResumeQueue", methods=["GET"])
     @ restricted_access
     def pauseResumeQueue(self):
@@ -471,24 +457,24 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         if self.queueState=="CANCELLED" and self.itemState!="Failed":
             
             self.currentIndex=-1
-            self.message_to_js({'currentIndex':self.currentIndex})
+            self.messageToJs({'currentIndex':self.currentIndex})
             self.nextItem()
      
-        if self.ejectFail==True:
-            print("eject fail")
+        if self.itemState=="eject fail":
             self.controlEject=True
             self.ejectFail=False
-            self.queueState="RUNNING"
+            self.queueState=QueueState.RUNNING.value
+            self.itemState=ItemState.PRINTING.value
+            self.messageToJs({'ejectState':self.ejectState,'queueState':self.queueState})
             self.nextItem()
           
         else:
-            print(self.currentIndex)
             if self.itemState!='Failed':
                 self.currentIndex=self.currentIndex+1
             self.ejectState=EjectState.IDLE.value
             self.queueState=QueueState.RUNNING.value
             
-            self.message_to_js({'ejectState':self.ejectState,'queueState':self.queueState,'currentIndex':self.currentIndex})
+            self.messageToJs({'ejectState':self.ejectState,'queueState':self.queueState,'currentIndex':self.currentIndex})
             
             self.nextItem()
         
@@ -502,7 +488,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
         self.queueState=QueueState.CANCELLED.value
    
-        self.message_to_js({'queueState':self.queueState})
+        self.messageToJs({'queueState':self.queueState})
         self.nextItem()
         
         res = jsonify(success=True)
@@ -518,20 +504,18 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         self.ejectState=EjectState.EJECTING_FINISHED.value
         self.itemState=ItemState.FINISHED.value
                       
-        self.message_to_js({'itemState':self.itemState})
-        print("front")
+        self.messageToJs({'itemState':self.itemState})
 
         res = jsonify(success=True)
         res.status_code = 200
         return res
     
-    
-    
+        
     @ octoprint.plugin.BlueprintPlugin.route("/pauseStopQueue", methods=["GET"])
     @ restricted_access
     def pauseStopQueue(self):
         self.queueState=QueueState.PAUSED.value
-        self.message_to_js({'queueState':self.queueState})
+        self.messageToJs({'queueState':self.queueState})
         self.nextItem()
         res = jsonify(success=True)
         res.status_code = 200
@@ -542,18 +526,23 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     @ octoprint.plugin.BlueprintPlugin.route("/startQueue", methods=["GET"])
     @ restricted_access
     def startQueue(self):
-        self.setSettings()
-        print(self.settings2)
-        self.queueState = "STARTED"
-        totalTime = flask.request.args.get("totalEstimatedTime", 0)
-        self.totalEstimatedTime = totalTime
-        if len(self.currentQueue["items"]) > 0:
-            print("start")
-            self.startPrint()
+        # if self.sheildControl.switch2Pres==True:
+            self.setSettings()
+            self.queueState = "STARTED"
+            totalTime = flask.request.args.get("totalEstimatedTime", 0)
+            self.totalEstimatedTime = totalTime
+            if len(self.currentQueue["items"]) > 0:
+                self.startPrint()
 
-        res = jsonify(success=True)
-        res.status_code = 200
-        return res
+            res = jsonify(success=True)
+            res.status_code = 200
+            return res
+        # else:
+        #     self.sheildControl.backward
+        #     waitTimer3 = Timer(0.1,self.startQueue,args=None,kwargs=None)
+        #     waitTimer3.start()  
+        
+
     
     # get data for js
     @ octoprint.plugin.BlueprintPlugin.route("/sendStartDatas", methods=["GET"])
@@ -562,9 +551,9 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         message ={}
         for val in self.requiredDatas:
             message[val]=getattr(self,val)
-        self.message_to_js(message)
-        self.message_to_js({'queues':self.queues})
-        print(self.queues)
+        self.messageToJs(message)
+        self.messageToJs({'queues':self.queues})
+    
 
         return message
     
@@ -584,20 +573,18 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     @ octoprint.plugin.BlueprintPlugin.route("/createQueue", methods=["GET"])
     @ restricted_access
     def createQueue(self):
-        print("queue created")
         self.currentQueue = dict(
             id=str(uuid.uuid4()),
             name="New Queue",
             items= [],
             index=self.queuesIndex
         )
-        
         self.queuesIndex=self.queuesIndex+1
         self.queues.append(self.currentQueue)
         self.currentQueueItem = None
         self.currentTime = 0
         self.totalEstimatedTime = 0
-        self.message_to_js({'currentQueue':self.currentQueue})
+        self.messageToJs({'currentQueue':self.currentQueue})
 
         res = jsonify(success=True)
         res.status_code = 200
@@ -618,7 +605,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             self.currentQueue["items"][index] = itemNext
             self.currentQueue["items"][index + 1] = itemCurr
 
-
         res = jsonify(success=True)
         res.status_code = 200
         return res
@@ -628,12 +614,8 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     @ octoprint.plugin.BlueprintPlugin.route("/queueAddItem", methods=["POST"])
     @ restricted_access
     def queueAddItem(self):
-   
         queue = self.currentQueue["items"]
-
-        
         data = flask.request.get_json()
-        print(data)
         queue.append(
             dict(
                 index=data["index"],
@@ -642,9 +624,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                 sd=data["item"]["sd"],
                 state="Await",
                 timeLeft=data["item"]["timeLeft"]
-                
             )   
-           
         )
         res = jsonify(success=True, data="")
         res.status_code = 200
@@ -654,14 +634,11 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     @ restricted_access
     def pointer(self):
         self.currentIndex = (int(flask.request.args.get("index", 0))-1)
-        print(self.currentIndex)
-        
-        
+        self.itemState=ItemState.PRINTING.value                #resumede ejcet fail tetiklenmesin diye
         res = jsonify(success=True)
         res.status_code = 200
         return res
 
-  
     @ octoprint.plugin.BlueprintPlugin.route("/queueRemoveItem", methods=["DELETE"])
     @ restricted_access
     def queueRemoveItem(self):
@@ -680,7 +657,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     @ octoprint.plugin.BlueprintPlugin.route("/queueItemDuplicate", methods=["GET"])
     @ restricted_access
     def queueItemDuplicate(self):
-        print("aojuhsdhaıuosgpaıosubd")
         index = int(flask.request.args.get("index", 0))
         queue = copy.deepcopy(self.currentQueue["items"])
 
@@ -697,18 +673,16 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         res.status_code = 200
         return res
 
-   
     @ octoprint.plugin.BlueprintPlugin.route("/getQueue", methods=["GET"])
     @ restricted_access
     def getQueue(self):
-        queue_id = flask.request.args.get("id")
+        queueId = flask.request.args.get("id")
 
         for queue in self.queues:
-            if queue["id"] == queue_id:
+            if queue["id"] == queueId:
                 self.currentQueue = queue
                 break
   
-        
         res = jsonify(success=True)
         res.status_code = 200
         return res
@@ -727,8 +701,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             "speroplugin": {
                 "displayName": "speroplugin Plugin",
                 "displayVersion": self._plugin_version,
-
-           
                 "type": "github_release",
                 "user": "you",
                 "repo": "OctoPrint-speroplugin",
@@ -739,11 +711,9 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             }
         }
 
-
     def sanitize_temperatures(self,comm_instance, parsed_temperatures, *args, **kwargs):
         x = parsed_temperatures.get('B')
-        if x:
-            
+        if x:    
             currentBedTemp = x[0]
             if self.ejectState == "WAIT_FOR_TEMP":
                 self.checkBedTemp(currentBedTemp)
@@ -752,7 +722,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     
     def checkBedTemp(self,currentBedTemp):
     
-        self.message_to_js({'temp':currentBedTemp,'targetBedTemp':self.settings2["targetBedTemp"]})
+        self.messageToJs({'temp':currentBedTemp,'targetBedTemp':self.settings2["targetBedTemp"]})
         
         if(currentBedTemp<=float(self.settings2["targetBedTemp"])):
             self.startEject() # state -> Ejecting, 

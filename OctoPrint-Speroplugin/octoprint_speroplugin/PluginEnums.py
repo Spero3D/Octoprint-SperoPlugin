@@ -1,7 +1,7 @@
 
 
 from enum import Enum
-from lib2to3.pgen2.token import AWAIT
+
 
 
 
@@ -10,13 +10,15 @@ class ItemState(Enum):
     AWAIT="Await"
     PRINTING="Printing"
     EJECTING="Ejecting"
-    EJECT_FAIL="Eject_fail"
+    EJECT_FAIL="eject fail"
     CANCELLED="Cancelled"
     CANCELLING="Cancelling"
     FAILLED="Failed"
     PAUSED="Paused"
     PAUSING="Pausing"
     FINISHED="Finished"
+    def __str__(self):
+     return str(self.value)
 
 class QueueState(Enum):
     
@@ -25,27 +27,29 @@ class QueueState(Enum):
     RUNNING="RUNNING"
     CANCELLED="CANCELLED"
     PAUSED="PAUSED"
-    FINISHED="FINISHED"
 
-    # def __str__(self):
-    #     return str(self.value)
+    def __str__(self):
+     return str(self.value)
 
 
 
 class BedPosition(Enum):
-    MIDDLE="MIDDLE"
-    FRONT="FRONT"
-    BACK="BACK"
+    MIDDLE="Middle"
+    FRONT="Front"
+    BACK="Back"
     
-    # def __str__(self):
-    #     return str(self.value)
+    def __str__(self):
+     return str(self.value)
 
 
 
 class MotorState(Enum):
-    IDLE="IDLE"
-    FORWARD="FORWARD"
-    BACKWORD="BACKWORD"
+    IDLE="Idle"
+    FORWARD="Forward"
+    BACKWARD="Backward"
+    STOP="Stop"
+
+    
     
 class EjectState(Enum):
     IDLE="IDLE"
@@ -53,6 +57,15 @@ class EjectState(Enum):
     EJECTING="EJECTING"
     EJECTING_FINISHED="EJECTING_FINISHED"
     EJECT_FAİL="EJECT_FAIL"
-
+    
+    
+class ShieldState(Enum):
+    IDLE="IDLE"
+    ISINSEQUENACE="ISINSEQUENACE"
+    
+    def __str__(self):
+     return str(self.value)
+     
+     
 
 

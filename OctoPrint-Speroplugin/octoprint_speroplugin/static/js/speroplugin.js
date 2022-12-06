@@ -19,6 +19,7 @@ $(function() {
         self.queueName = ko.observable(0);
         self.queuesIndex=ko.observable(0);
         self.currentQueue=ko.observable(0);
+        self.ejectFail=ko.observable(0);  
         // self.currentQueueItems=ko.observableArray([]);
         
         self.itemState=ko.observable();
@@ -64,7 +65,6 @@ $(function() {
             if (data === undefined) {
                 // we also only send data that actually changed when no data is specified
                 var localData = self.settings.getLocalData();
-                console.log('localData',localData)
                 data = getOnlyChangedData(localData, self.settings.lastReceivedSettings);
                 if(_.has(data,'plugins.speroplugin')){
 
@@ -233,7 +233,6 @@ $(function() {
         self.pointer = function (index) {             // tıkladıgım pointerın indexsini döndürür
             try {
               
-
                 if (index > 0) {
                     $.ajax({
                         url: "plugin/speroplugin/pointer?index=" + index,
@@ -251,9 +250,6 @@ $(function() {
 
         self.onDataUpdaterPluginMessage = function (plugin, data) { 
 
- 
-
-
             if (plugin == "speroplugin" && !_.isEmpty(data)) {
                 
                 try {
@@ -269,9 +265,6 @@ $(function() {
                         " C";
                     self.itemInfo(message);
                     // console.log(this.itemInfo())
-    
-                    
-                    
                     // console.log('targetBedTemp',self.targetBedTemp());
                     // console.log('currentIndex',self.currentIndex());
                     // console.log('bedPosition',self.bedPosition());
@@ -284,7 +277,7 @@ $(function() {
                     // console.log('settings',self.settings2())
                     
                    
-                    if(self.queueState()=="FINISHED"){
+                    if(self.queueState()=="IDLE"){
                         self.itemState("Await");
                         for(let i=0;i<self.currentItems().length;i++){
                       
@@ -297,7 +290,6 @@ $(function() {
                     }
 
 
-                   
                     if (self.selectedQueue()==undefined){
                         self.selectedQueue(self.currentQueue());
 
@@ -317,7 +309,6 @@ $(function() {
                         }
                     }
 
-
                         
               }catch (error) {
                 console.log("onDataUpdaterPluginMessage => ", error);
@@ -325,10 +316,6 @@ $(function() {
             }
         
         };
-
-
-
-
 
 
         self.front = function () {
@@ -356,8 +343,6 @@ $(function() {
         };
 
 
-
-
         self.pauseStopQueue = function (index) {
             try {
                 console.log("pause ye basıldı");
@@ -378,7 +363,6 @@ $(function() {
                 console.log("pause resume queue error => ", error);
             }
         };
-
 
         self.cancelQueue = function () {
             try {
@@ -420,9 +404,7 @@ $(function() {
         self.getQueue = function (id) {              // queue itemleri atıyor
             if(self.queueState()=='IDLE'){
                  try {
-                
-               
-
+       
                     console.log("Our queue id is =>=> ", id);
                     $.ajax({
                         url: "plugin/speroplugin/getQueue?id=" + id,
@@ -459,26 +441,13 @@ $(function() {
                 self.getQueue(q.id);
                 self.queueName(q.name)
                 self.queuesIndex(q.index)
-                
-            
-           
+ 
                 
             }
         });
 
         self.deviceControl = function (data) {
             try {
-                if (self.eject_fail() == true) {
-                    self.eject_fail(false);
-                    if (data == "cancel") {
-                        self.ejecting(false);
-                        self.terminating(false);
-                    } else if (data == "eject") {
-                        self.ejecting(true);
-                        self.terminating(true);
-                        
-                    }
-                }
                 json = JSON.stringify({ request: data });
                 $.ajax({
                     url: "plugin/speroplugin/deviceControl",
@@ -494,7 +463,6 @@ $(function() {
                 console.log("deviceControl => ", error);
             }
         };
-
 
 
         $(document).ready(function () {
@@ -602,7 +570,6 @@ $(function() {
                                 break;
 
                             case "Resummed":
-                                    self.terminating(false);
                                     item().color("red");
                                     item().state(state);
                                     self.queueState("RUNNING");
@@ -626,7 +593,6 @@ $(function() {
             }
         });
 
-    
         self.queueAddItem = function (data) {
             try {
                 self.check_add_remove("add", data.item);
@@ -714,7 +680,7 @@ $(function() {
             }
         };
 
-        
+    
         self.reload_items = function (items = [], reload = false) {
             try {
                 self.itemCount = items.length;
@@ -758,7 +724,7 @@ $(function() {
 
         self.reload_plugin = function () {
 
-       
+    
             try {
                 $.ajax({
                     url: "plugin/speroplugin/sendStartDatas",
@@ -954,7 +920,7 @@ $(function() {
 
         self.toHHMMSS = function (sec_num) {
             try {
-                if (!isNaN(sec_num) && sec_num > 0 && !self.terminating()) {
+                if (!isNaN(sec_num) && sec_num > 0 ) {
                     var secs = parseInt(sec_num, 10);
                     var hours = Math.floor(secs / 3600);
                     var minutes = Math.floor((secs - hours * 3600) / 60);
@@ -1031,10 +997,6 @@ $(function() {
             }
         };
 
-
-
-
-
         self.sayhello = function () {
          
             console.log("Hello!");
@@ -1058,7 +1020,7 @@ $(function() {
                 console.log("duplicate item error => ", error);
             }
         };
-        self.delete_from_database = function () {
+        self.deleteFromDatabase = function () {
             try {
                 if (self.queueId() != undefined || self.queueId() != null);
                 $.ajax({
@@ -1110,7 +1072,7 @@ $(function() {
     
         self.toHHMMSS = function (sec_num) {
             try {
-                if (!isNaN(sec_num) && sec_num > 0 && !self.terminating()) {
+                if (!isNaN(sec_num) && sec_num > 0 ) {
                     var secs = parseInt(sec_num, 10);
                     var hours = Math.floor(secs / 3600);
                     var minutes = Math.floor((secs - hours * 3600) / 60);
@@ -1133,9 +1095,6 @@ $(function() {
             }
         };
         };
-        
-
-
     }
 
 

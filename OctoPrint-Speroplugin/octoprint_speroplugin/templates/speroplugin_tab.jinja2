@@ -86,7 +86,7 @@
   
       </div>
   
-      <div class="half buttons">
+      <div class="half buttons" >
           <button class="buttons_item" title="The table rail moves backward." data-bind="event: {mousedown: function(){$root.deviceControl('backward')},
                           mouseup:function(){$root.deviceControl('stop')}},
                           enable: ($root.queueState() == 'IDLE' || $root.queueState() == 'PAUSED')"
@@ -150,7 +150,7 @@
       
   
         <div class="queue_save_delete">
-          <div class="create_part" data-bind="visible: $root.queueState() == 'IDLE'|| $root.queueState()=='FINISHED', 
+          <div class="create_part" data-bind="visible: $root.queueState() == 'IDLE', 
             style: $root.queueState() == 'IDLE' ? {padding:'5px'} : {}">
             <div class="savebox">
                 <input class="text_queue" data-bind="textInput: $root.selectedQueue()?$root.selectedQueue().name:'', event:{ blur :$root.saveToDataBase }">
@@ -181,7 +181,7 @@
             
                 <div   >
                   <center><select class="selected" id="queues" data-bind="options: $root.queues, optionsText: 'name', value: $root.selectedQueue, 
-                  optionsCaption:'Select Queue', enable: $root.queueState() == 'IDLE'||$root.queueState()=='FINISHED',event:{ focus :$root.saveToDataBase() },event:{ blur :$root.sayhello() }" style="width:100%;">
+                  optionsCaption:'Select Queue', enable: $root.queueState() == 'IDLE',event:{ focus :$root.saveToDataBase() },event:{ blur :$root.sayhello() }" style="width:100%;">
                 
                   </select></center>
                 </div>
@@ -275,7 +275,7 @@
           
   
   
-            <span  data-bind="click: function(){$root.pauseStopQueue()}, visible: queueState() != 'FINISHED'&& queueState() != 'CANCELLED' &&!(queueState() == 'PAUSED') && !(queueState() == 'IDLE'&&itemState() != 'Cancelling')&& itemState()!='Cancelling'" title="Pause printing">
+            <span  data-bind="click: function(){$root.pauseStopQueue()}, visible:  queueState() != 'CANCELLED' &&!(queueState() == 'PAUSED') && !(queueState() == 'IDLE'&&itemState() != 'Cancelling')&& itemState()!='Cancelling'" title="Pause printing">
               <svg width="58" height="58" viewBox="0 0 58 58" fill="none" xmlns="http://www.w3.org/2000/svg" style ="margin-left: 68px" >
               <g filter="url(#filter0_d_0_1)">
               <rect x="4" width="50" height="50" rx="5" fill="#F9F9F9"/>
@@ -301,7 +301,7 @@
             </span>    
           </div>
           <div class="pause_and_resume">
-            <span  data-bind="click: function(){$root.pauseResumeQueue()},visible: (queueState() == 'CANCELLED'|| queueState() == 'PAUSED'||queueState() == 'FINISHED') && (queueState() != 'IDLE'&&itemState() != 'Cancelling')" title="Resume printing">
+            <span  data-bind="click: function(){$root.pauseResumeQueue()},visible: (queueState() == 'CANCELLED'|| queueState() == 'PAUSED') && (queueState() != 'IDLE'&&itemState() != 'Cancelling')" title="Resume printing">
                 <svg width="46" height="46" viewBox="0 0 59 59" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left: 97px;">
                 <g opacity="0.94" filter="url(#filter0_d_0_1)">
                 <path d="M9.5 0.75H49.5C52.1234 0.75 54.25 2.87665 54.25 5.5V45.5C54.25 48.1234 52.1234 50.25 49.5 50.25H9.5C6.87665 50.25 4.75 48.1234 4.75 45.5V5.5C4.75 2.87665 6.87665 0.75 9.5 0.75Z" stroke="black" stroke-width="0.5" shape-rendering="crispEdges"/>
@@ -368,11 +368,11 @@
   
   
         <div id="queue_list" data-bind="foreach: currentItems, " >
-          <div class='queue_container' style="border-bottom: 1px solid #000; " data-bind= 'style: { background: color}'>
+          <div class='queue_container' style="border-bottom: 1px solid #bbb; " data-bind= 'style: { background: color}'>
             <div class='queue-row-container'>
                 <div class='queue-inner-row-container'>
           
-                    <div><input type="radio"  data-bind=" click: function() { $root.pointer($data.index())},enable:($root.queueState()=='PAUSED'&& $root.itemState()=='Finished')"> 
+                    <div><input type="radio"  data-bind=" click: function() { $root.pointer($data.index())},enable:($root.queueState()=='PAUSED'&& $root.itemState()=='Finished')||$root.itemState()=='eject fail'"> 
                     <span class="headText" data-bind="text: $data.index()"></span></div>
                     <div><span  data-bind="text: name"></span></div>
    
@@ -439,7 +439,7 @@
                       </div>
                      <!-- /ko -->
   
-                      <!-- ko if: $data.state() === " Eject Failed" -->
+                      <!-- ko if: $data.state() === " eject fail" -->
                       <div>
                         <span
                         class="circle_state"style="background-color: #aa9a3c;"> 
@@ -515,7 +515,7 @@
                       </div>
                      <!-- /ko -->
   
-                      <!-- ko if: $data.state() === "Eject Failed" -->
+                      <!-- ko if: $data.state() === "eject fail" -->
                       <div>
                         <span
                         class="circle_state"style="background-color: red;"> 
@@ -570,11 +570,11 @@
       
    </div>
   </div>   
-<div>
+<!-- <div>
     <button class="button_test" data-bind='click: function() { $root.front()}'>
 
     </button>
     <button class="button_test">
               
     </button>
-</div>
+</div> -->

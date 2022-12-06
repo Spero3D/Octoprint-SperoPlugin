@@ -11,6 +11,7 @@ OctoPrint_Speroplugin.egg-info/requires.txt
 OctoPrint_Speroplugin.egg-info/top_level.txt
 octoprint_speroplugin/ButtonService.py
 octoprint_speroplugin/MotorService.py
+octoprint_speroplugin/PluginEnums.py
 octoprint_speroplugin/SheildControl.py
 octoprint_speroplugin/SwitchService.py
 octoprint_speroplugin/__init__.py
