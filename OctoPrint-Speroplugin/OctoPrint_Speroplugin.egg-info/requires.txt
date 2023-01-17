@@ -1,3 +1,4 @@
 OctoPrint
 tinydb
 gpiozero
+RPi.GPIO
