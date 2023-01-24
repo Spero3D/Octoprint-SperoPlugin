@@ -9,7 +9,7 @@ class UsbState(str,Enum):
     Connected='Connected'
 
 
-class ItemState(Enum):
+class ItemState(str,Enum):
     
     AWAIT="Await"
     PRINTING="Printing"
@@ -17,23 +17,25 @@ class ItemState(Enum):
     EJECT_FAIL="eject fail"
     CANCELLED="Cancelled"
     CANCELLING="Cancelling"
-    FAILLED="Failed"
     PAUSED="Paused"
     PAUSING="Pausing"
     FINISHED="Finished"
-    def __str__(self):
-     return str(self.value)
+    FAILED="Failed"
+  
+   
 
 class QueueState(Enum):
     
-    IDLE="IDLE"
-    STARTED="STARTED"
-    RUNNING="RUNNING"
-    CANCELLED="CANCELLED"
-    PAUSED="PAUSED"
+    IDLE="Idle"
+    STARTED="Started"
+    RUNNING="Running"
+    CANCELLED="Cancelled"
+    PAUSED="Paused"
+    FAILED="Failed"
 
     def __str__(self):
-     return str(self.value)
+        return str(self.value)
+
 
 
 
@@ -43,7 +45,7 @@ class BedPosition(Enum):
     BACK="Back"
     
     def __str__(self):
-     return str(self.value)
+         return str(self.value)
 
 
 
@@ -56,16 +58,16 @@ class MotorState(Enum):
     
     
 class EjectState(Enum):
-    IDLE="IDLE"
-    WAIT_FOR_TEMP="WAIT_FOR_TEMP"
-    EJECTING="EJECTING"
-    EJECTING_FINISHED="EJECTING_FINISHED"
-    EJECT_FAİL="EJECT_FAIL"
+    IDLE="Idle"
+    WAIT_FOR_TEMP="WaitForTemp"
+    EJECTING="Ejecting"
+    EJECTING_FINISHED="EjectingFinished"
+    EJECT_FAIL="EjectFail"
     
     
 class ShieldState(Enum):
-    IDLE="IDLE"
-    ISINSEQUENACE="ISINSEQUENACE"
+    IDLE="Idle"
+    ISINSEQUENACE="isInSequence"
     
     def __str__(self):
      return str(self.value)

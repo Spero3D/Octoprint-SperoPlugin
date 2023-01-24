@@ -18,13 +18,13 @@ $(function() {
         self.motorState=ko.observable(0)
         self.isShieldConnected=ko.observable(0)
         self.device=ko.observable(0)
-        self.queueState=ko.observable("IDLE");
+        self.queueState=ko.observable("Idle");
         self.queueName = ko.observable(0);
         self.queuesIndex=ko.observable(0);
         self.currentQueue=ko.observable(0);
         self.ejectFail=ko.observable(0);
         self.createQueueEnable=ko.observable(0);
-        // self.currentQueueItems=ko.observableArray([]);
+        self.repeatQueue=ko.observable("off");
 
         self.itemState=ko.observable();
         self.targetBedTemp=ko.observable(0);
@@ -53,8 +53,10 @@ $(function() {
 
         self.onBeforeBinding = function () {
             try {
-
-                self.reload_plugin();
+                
+                self.reloadPlugin();
+        
+                
                 self.fileDatas();
             } catch (error) {
                 console.log("onBeforeBinding => ", error);
@@ -65,6 +67,7 @@ $(function() {
         self.startQueue = function () {
             try {
                 self.fileDatas();
+             
 
                 $.ajax({
                     url:
@@ -77,6 +80,7 @@ $(function() {
                     },
                     data: {},
                     success() {
+                      self.itemState("Printing")
                       console.log("printStarted")
                     },
                 });
@@ -119,56 +123,46 @@ $(function() {
                         self[v[0]](v[1])
                     })
           
-
                     var message =
                         self.temp().toString() +
                         " / " +
                         self.targetBedTemp().toString() +
                         " C";
                     self.itemInfo(message);
+                   
 
-
-     
-
-
+                    
                     if(self.firstQueue==true && self.currentQueue()!="0"){
-                    a=self.currentQueue()
-           
                     self.firstQueue=false
-                    self.selectedQueue(a)
+                    self.selectedQueue(self.currentQueue())
                     }
 
 
-
-
-
-                    if(self.queueState()=="IDLE"){
+                    if(self.queueState()=="Idle"){
                         self.itemState("Await");
                         for(let i=0;i<self.currentItems().length;i++){
 
                             var item = self.currentItems()[i];
                             item().state(self.itemState());
 
-
-
                          }
                     }
 
+                 
+                 
 
+                  
 
-
-                    var item = self.currentItems()[self.currentIndex()];
-                    item().state(self.itemState());
-                    self.currentQueueItems(self.currentItems()["items"])
-
-
-                    if (self.queueState()=='IDLE'){
+                    if (self.queueState()=='Idle'){
                         for (let i = 0; i < self.currentQueue().length; i++){
                             self.currentQueue()["items"][i]["state"] = "Await"
 
 
                         }
                     }
+
+
+                
 
 
               }catch (error) {
@@ -219,7 +213,7 @@ $(function() {
         };
         self.pauseResumeQueue = function () {
             try {
-                $.ajax({
+                 $.ajax({
                     url: "plugin/speroplugin/pauseResumeQueue",
                     method: "GET",
                     dataType: "json",
@@ -235,9 +229,10 @@ $(function() {
     };
 
         self.getQueue = function (id) {              // queue itemleri atıyor
-            
+            console.log("current item2")
+            console.log(self.currentQueue())
 
-            if(self.queueState()=='IDLE'){
+            if(self.queueState()=='Idle'){
                  try {
                     $.ajax({
                         url: "plugin/speroplugin/getQueue?id=" + id,
@@ -250,16 +245,19 @@ $(function() {
                         success() {
            
                             ko.utils.arrayFirst(self.queues(), function (item) {
+                                console.log("current item3")
+                                console.log(self.currentQueue())
 
                                 var reload =
-                                    self.queueState() == "IDLE"
+                                    self.queueState() == "Idle"
 
                                 if (item.id == id) {
+                                    
                                     self.queueId(item.id);
                                     self.queueName(item.name);
-                                    self.reload_items(item.items)
-                                    var queue = self.reload_items(
-                                        item.items,
+                                    self.reloadItems(self.currentQueue())
+                                    var queue = self.reloadItems(
+                                        items=self.currentQueue()["items"],
                                         (reload = reload)
                                     );
 
@@ -276,9 +274,11 @@ $(function() {
         self.selectedQueue.subscribe(function (q) {
             if (q != undefined || q != null) {
                 
-  
+                console.log("q")
+                console.log(q)
                 self.queueName(q.name)
                 self.queuesIndex(q.index)
+                self.queueId(q.id)
                 
 
 
@@ -287,7 +287,12 @@ $(function() {
 
                 }
                 else{
-                    self.currentQueue(q)
+                    console.log(q)
+
+                    console.log("current item1")
+                    console.log(self.currentQueue())
+
+
                     self.getQueue(q.id)
                     self.queueName(q.name)
                     self.queuesIndex(q.index)
@@ -320,6 +325,41 @@ $(function() {
 
             }
         });
+
+
+        self.repeatOnOff = function (data) {
+            if (self.repeatQueue() == "off") {
+                self.repeatQueue("on")
+                document.getElementById("repeatButton").style.backgroundColor = "#3CAFEA";
+                data="on"
+                }
+            else{
+                document.getElementById("repeatButton").style.backgroundColor = "rgb(249, 249, 249)";
+                self.repeatQueue("off")
+                data="off"
+                
+            }
+            console.log(self.repeatQueue())
+
+
+
+
+            try {
+                json = JSON.stringify({ request: data });
+                $.ajax({
+                    url: "plugin/speroplugin/repeatOnOff",
+                    method: "POST",
+                    contentType: "application/json",
+                    dataType: "json",
+                    headers: {
+                        "X-Api-Key": UI_API_KEY,
+                    },
+                    data: json,
+                });
+            } catch (error) {
+           
+            }
+        };
 
   
 
@@ -389,7 +429,7 @@ $(function() {
             try {
                 var have_print = false;
 
-    
+              
                 return have_print;
             } catch (error) {
                 console.log("check_printing => ", error);
@@ -399,88 +439,109 @@ $(function() {
 
         self.printerState.printTime.subscribe(function (data) {
             try {
-
+        
                    {
                         if (data != null || data != undefined) {
-                            self.currentItems()
-                                [self.currentIndex()]()
-                                .timeLeft(self.printerState.printTimeLeft());
-                            self.currentItems()
-                                [self.currentIndex()]()
-                                .progress(
-                                    self.printerState.progressString() ?? 0
-                                );
-
+                            self.currentItems()[self.currentIndex()]().timeLeft(self.printerState.printTimeLeft());
+                           
                             self.totalPrintTime();
                             self.sendTimeData();
+
+                            if(self.printerState.stateString()=="Printing"){
+                            
+                            self.currentItems()
+                            [self.currentIndex()]()
+                            .progress(
+                                self.printerState.progressString() ?? 0
+                            );
+
+
+
+                            }
+
                         }
                     }
 
             } catch (error) {
-                console.log("print time subscription => ", error);
+            
             }
         });
 
 
-        self.printerState.stateString.subscribe(function (state) {
-            try {
-
-
-                if (self.queueState != "IDLE") {
+        self.itemState.subscribe(function (state) {
+         
+                
+                if (self.queueState != "Idle") {
                     var item = self.currentItems()[self.currentIndex()];
-                    if (
-                        state != "Operational" &&
-                        state != "Finished" &&
-                        state != "Cancelled"
-                    ) {
+                  
                         switch (state) {
                             case "Printing":
-
+                                
                                 item().color("#F9F9F9");
                                 item().state(state);
-                                if (self.queueState() != "PAUSED")
-                                    self.queueState("RUNNING");
+                         
+                                break;
+                            case "Ejecting":
+                                console.log("yes")
+                                item().color("#F9F9F9");
+                                item().state(state);
+                         
+                                break;  
+                           
+
+                            case "Await":
+                                item().color("#F9F9F9");
+                                item().state(state);
+                         
+                                break;
+                            case "Cancelling":
+                                item().state(state);
+                                    break;
+                            case "Cancelled":
+                                item().state(state);
+                                    break
+                            case "Failed":
+                                item().state("state");
+                                    break
+                            
+                            case "Finished":
+                                var item = self.currentItems()[self.currentIndex()];
+                                item().state(state);
+                            
                                 break;
                             case "Pausing":
                                 item().color("#F9F9F9");
                                 item().state(state);
-                                self.queueState("PAUSING");
                                 break;
                             case "Paused":
                                 item().color("#F9F9F9");
                                 item().state(state);
-                                self.queueState("PAUSED");
                                 break;
 
-                            case "Eject Faild":
-                                item().color("red");
+                            case "EjectFaild":
                                 item().state(state);
-                                self.queueState("EJECT FAILD");
                                 break;
 
                             case "Resummed":
-                                    item().color("red");
                                     item().state(state);
-                                    self.queueState("RUNNING");
                                     break;
 
 
                             case "Cancelled":
-                                item().color("red");
                                 item().state(state);
-                                self.queueState("CANCELLED");
                                 break;
                             default:
                                 break;
                         }
-                    }
+                
                 }
 
 
-            } catch (error) {
-                console.log("printerState => ", error);
-            }
         });
+
+
+
+      
 
         self.queueAddItem = function (data) {
             try {
@@ -532,23 +593,13 @@ $(function() {
         };
         self.saveToDataBase = function (val,e) {
 
-
+          
             const newName = e.target.value??'';
 
             self.currentId="sa"
-            if (self.queuesIndex()==undefined){
-                self.queuesIndex(self.queues().length)
-
-
-            }else(
-
-                self.queuesIndex(((self.queues().length)-1))
-
-
-            )
-            
+ 
             if (self.selectedQueue()==undefined){
-
+              
                 self.currentId=self.currentQueue().id
 
 
@@ -559,6 +610,7 @@ $(function() {
             }
          
             try {
+                console.log(self.queuesIndex())
                 $.ajax({
                     url: "plugin/speroplugin/saveToDataBase",
                     method: "POST",
@@ -571,7 +623,7 @@ $(function() {
                     data: JSON.stringify({
                         queueName: newName,
                         id:  self.currentId,
-                        index:self.queuesIndex()
+                        index:(self.queuesIndex())
 
                     }),
                     success() {
@@ -579,7 +631,6 @@ $(function() {
                         self.queueName(newName)
 
 
-                        self.reload_plugin();
                     },
                 });
             } catch (error) {
@@ -588,7 +639,7 @@ $(function() {
         };
 
 
-        self.reload_items = function (items = [], reload = false) {
+        self.reloadItems = function (items = [], reload = false) {
 
             try {
                 if (items!=undefined){
@@ -601,12 +652,14 @@ $(function() {
                 var templist = [];
 
                 items.forEach((e) => {
+                    items=self.currentQueue()["items"]
                     var temp = ko.observable({
                         index: ko.observable(e.index),
                         name: ko.observable(e.name),
                         progress: ko.observable(0),
                         timeLeft: ko.observable(e.timeLeft),
                         state: ko.observable(!reload ? e.state : "Await"),
+                        
                         previous_state: ko.observable(""),
                         color: ko.observable(
                             !reload
@@ -617,6 +670,8 @@ $(function() {
                                     : e.state == "Finished"
                                     ? "#F9F9F9"
                                     : e.state == "Cancelling"
+                                    ? "#F9F9F9"
+                                    : e.state == "Await"
                                     ? "#F9F9F9"
                                     : e.state == "Canceled" ||
                                       e.state == "Failed"
@@ -632,11 +687,11 @@ $(function() {
                 self.currentItems(templist);
                 return templist;
             } catch (error) {
-                console.log("reload_items => ", error);
+                
             }
         };
 
-        self.reload_plugin = function () {
+        self.reloadPlugin = function () {
 
 
             try {
@@ -649,10 +704,26 @@ $(function() {
                     },
                     success: function (item) {
 
+
+                        
+                        self.currentQueue(item["currentQueue"]["items"])
+                        self.getQueue(item["currentQueue"]["id"])
+
+                        // self.reloadItems(item["currentQueue"]["id"])
+
+                   
+                        self.itemState("Finished");
+                        for(let i=0;i<self.currentItems().length;i++){
+                            var item = self.currentItems()[i];
+                            item().state(self.itemState());
+
+                         }
+                    
+
                     },
                 });
             } catch (error) {
-                console.log("reload_plugin => ", error);
+                console.log("reloadPlugin => ", error);
             }
         };
         self.createQueue = function () {
@@ -666,10 +737,10 @@ $(function() {
                         "X-Api-Key": UI_API_KEY,
                     },
                     success: function (r) {  
-                    self.selectedQueue((self.currentItems()))
+                    self.selectedQueue((self.currentQueue()))
                     self.currentItems(self.currentQueue().items)
+                    console.log(self.queuesIndex())
                     self.itemCount=0
-                    self.reload_plugin();
                     },
                     error: function (e) {
                         console.log(e);
@@ -860,7 +931,7 @@ $(function() {
         self.queueItemDown = function (index) {
             try {
                 if (index < self.currentItems().length - 1) {
-                    self.row_change_items("down", index);
+                    self.rowChangeItems("down", index);
 
                     $.ajax({
                         url: "plugin/speroplugin/queueItemDown?index=" + index,
@@ -875,7 +946,7 @@ $(function() {
                 console.log("queueItemDown error => ", error);
             }
         };
-        self.row_change_items = function (type, index) {
+        self.rowChangeItems = function (type, index) {
             try {
                 var newIndex;
 
@@ -897,7 +968,7 @@ $(function() {
         self.queueItemUp = function (index) {
             try {
                 if (index > 0) {
-                    self.row_change_items("up", index);
+                    self.rowChangeItems("up", index);
                     $.ajax({
                         url: "plugin/speroplugin/queueItemUp?index=" + index,
                         type: "GET",
@@ -912,8 +983,8 @@ $(function() {
             }
         };
 
-        self.sayhello = function () {
-
+        self.checkCreateQueueEnable = function () {
+            console.log("hello")
             if(self.selectedQueue()==undefined){
                 self.createQueueEnable("idle")
                 }
@@ -936,7 +1007,7 @@ $(function() {
                         "X-Api-Key": UI_API_KEY,
                     },
                     success: function () {
-                        self.reload_plugin();
+                        self.reloadPlugin()
                     },
                 });
             } catch (error) {
@@ -945,7 +1016,7 @@ $(function() {
         };
         self.deleteFromDatabase = function () {
             try {
-                if (self.queueId() != undefined || self.queueId() != null);
+               
                 $.ajax({
                     url:
                         "plugin/speroplugin/deleteFromDatabase?id=" +
@@ -958,12 +1029,10 @@ $(function() {
                     data: {},
                     success() {
 
-
                         self.queueName(null);
                         self.queueId(null);
                         self.currentItems(null);
 
-                        self.reload_plugin();
 
                     },
                 });
