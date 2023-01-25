@@ -23,6 +23,7 @@ $(function() {
         self.queuesIndex=ko.observable(0);
         self.currentQueue=ko.observable(0);
         self.createQueueEnable=ko.observable(0);
+        self.repeatQueuejs=ko.observable("off");
         self.repeatQueue=ko.observable("off");
         self.queueFinished=ko.observable(0)
         self.itemState=ko.observable();
@@ -116,6 +117,13 @@ $(function() {
 
                          }
                   
+                    if(self.repeatQueue()==true){
+                        self.repeatQueue("false")
+                        self.startQueue()
+
+                        }
+
+                         
           
          
                
@@ -252,38 +260,39 @@ $(function() {
         });
 
 
-        // self.repeatOnOff = function (data) {
-        //     // if (self.repeatQueue() == "off") {
-        //     //     self.repeatQueue("on")
-        //     //     document.getElementById("repeatButton").style.backgroundColor = "#3CAFEA";
-        //     //     data="on"
-        //     //     }
-        //     // else{
-        //     //     document.getElementById("repeatButton").style.backgroundColor = "rgb(249, 249, 249)";
-        //     //     self.repeatQueue("off")
-        //     //     data="off"
+        self.repeatOnOff = function (data) {
+            if (self.repeatQueuejs() == "off") {
+                self.repeatQueuejs("on")
+                document.getElementById("repeatButton").style.backgroundColor = "#3CAFEA";
+                data="on"
+                }
+            else{
+                document.getElementById("repeatButton").style.backgroundColor = "rgb(249, 249, 249)";
+                self.repeatQueuejs("off")
+                data="off"
                 
-        //     // }
-        //     console.log(self.repeatQueue())
+            }
+
+            try {
+                        json = JSON.stringify({ request: data });
+                        $.ajax({
+                            url: "plugin/speroplugin/repeat-on-off",
+                            method: "POST",
+                            contentType: "application/json",
+                            dataType: "json",
+                            headers: {
+                                "X-Api-Key": UI_API_KEY,
+                            },
+                            data: json,
+                        });
+                    } catch (error) {
+                   
+                    }
+
+        }
 
 
-
-
-        //     try {
-        //         json = JSON.stringify({ request: data });
-        //         $.ajax({
-        //             url: "plugin/speroplugin/repeatOnOff",
-        //             method: "POST",
-        //             contentType: "application/json",
-        //             dataType: "json",
-        //             headers: {
-        //                 "X-Api-Key": UI_API_KEY,
-        //             },
-        //             data: json,
-        //         });
-        //     } catch (error) {
-           
-        //     }
+        //   
         // };
 
   

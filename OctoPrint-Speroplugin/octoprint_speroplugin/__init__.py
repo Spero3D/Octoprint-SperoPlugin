@@ -9,6 +9,8 @@ from tinydb.queries import Query
 import copy
 from .SerialPorts import SerialPorts
 import os
+import shutil
+import json
 import flask
 import uuid
 import datetime
@@ -221,6 +223,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             if self.queueState=='Running':
                 self.currentIndex=self.currentIndex+1
             if(self.queueState==QueueState.CANCELLED):
+                self.repeatQueue=False
                 self.currentIndex=0
                 self.messageToJs({'currentIndex':self.currentIndex} )
                 self.doItemsStateAwait()
@@ -275,6 +278,9 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             self.messageToJs({'queueState':self.queueState })
             self.messageToJs({'queueFinished':self.queueFinished })
             self.queueFinished=False
+            if self.repeatQueue==True:
+      
+                self.messageToJs({'repeatQueue':self.repeatQueue})
          
             
 
@@ -429,19 +435,21 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         res.status_code = 200
         return res
 
-    # @ octoprint.plugin.BlueprintPlugin.route("/repeatOnOff", methods=["POST"])
-    # @ restricted_access
-    # def repeatOnOff(self):
+    @ octoprint.plugin.BlueprintPlugin.route("/repeat-on-off", methods=["POST"])
+    @ restricted_access
+    def repeatOnOff(self):
         
-    #     data = flask.request.get_json()
-  
-    #     self.repeatQueue=data["request"]
-    #     print( self.repeatQueue)
+        data = flask.request.get_json()
+        if(data["request"]=="on"):
+            self.repeatQueue=True
+        else:
+            self.repeatQueue=False
+            
           
 
-    #     res = jsonify(success=True)
-    #     res.status_code = 200
-    #     return res
+        res = jsonify(success=True)
+        res.status_code = 200
+        return res
 
 
 
@@ -516,7 +524,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
         if self.queueState=="Cancelled" and self.itemState!="Failed":
 
-
+        
             self.currentIndex=-1
             self.messageToJs({'currentIndex':self.currentIndex})
             self.nextItem()
@@ -575,28 +583,29 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     @ octoprint.plugin.BlueprintPlugin.route("/start-queue", methods=["GET"])
     @ restricted_access
     def startQueue(self):
-            self.queueState = QueueState.STARTED
-            self.itemState=ItemState.PRINTING
-            self.currentQueue["items"][self.currentIndex]["state"]=self.itemState
-            self.updateItemState(self.currentQueue["id"],self.itemState)
-            self.messageToJs({'itemState':self.itemState})
+            try:
+                self.queueState = QueueState.STARTED
+                self.itemState=ItemState.PRINTING
+                self.currentQueue["items"][self.currentIndex]["state"]=self.itemState
+                self.updateItemState(self.currentQueue["id"],self.itemState)
+                self.messageToJs({'itemState':self.itemState})
 
-            if self.currentQueue!=None:
-                if len(self.currentQueue["items"]) > 0:
-                    self.itemState=ItemState.PRINTING
-                    self.messageToJs({'itemState':self.itemState})
-                    self.updateLastQueue(self.currentQueue["id"])
-                    self.startPrint()
-           
+                if self.currentQueue!=None:
+                    if len(self.currentQueue["items"]) > 0:
+                        self.itemState=ItemState.PRINTING
+                        self.messageToJs({'itemState':self.itemState})
+                        self.updateLastQueue(self.currentQueue["id"])
+                        self.startPrint()
+            
 
 
-            res = jsonify(success=True)
-            res.status_code = 200
-            return res
-
+                res = jsonify(success=True)
+                res.status_code = 200
+                return res
+            except json.decoder.JSONDecodeError as e:
+                os.remove("/home/spero-ahmet/devel/OctoPrint-Speroplugin/octoprint_speroplugin/queues.json")
 
     def updateLastQueue(self,queueId):
-        print("updated")
         Exist = Query()
         inDb = self.dbQueue.search(Exist.id == queueId)
         lastQueue = Query()
@@ -637,14 +646,16 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     @ octoprint.plugin.BlueprintPlugin.route("/send-start-datas", methods=["GET"])
     @ restricted_access
     def sendStartDatas(self):
+        try:
+            message ={}
+            for val in self.requiredDatas:
+                message[val]=getattr(self,val)
 
-        message ={}
-        for val in self.requiredDatas:
-            message[val]=getattr(self,val)
-
-        self.messageToJs(message)
-        self.messageToJs({'queues':self.queues})
-        self.messageToJs({'ports':self.ports})
+            self.messageToJs(message)
+            self.messageToJs({'queues':self.queues})
+            self.messageToJs({'ports':self.ports})
+        except json.decoder.JSONDecodeError as e:
+            os.remove("/home/spero-ahmet/devel/OctoPrint-Speroplugin/octoprint_speroplugin/queues.json")
 
 
 
