@@ -193,6 +193,7 @@
 
 }
 
+
 #tab_plugin_speroplugin .queue-inner-row-container .circle-state {
   
   height: 12px;
@@ -242,7 +243,7 @@ margin-left: 4px;
  }
  
  #tab_plugin_speroplugin .queue-item-adjust-buttons{
-  margin-left: 124px;
+  margin-left: 100px;
   margin-bottom: 4px;
 
  }

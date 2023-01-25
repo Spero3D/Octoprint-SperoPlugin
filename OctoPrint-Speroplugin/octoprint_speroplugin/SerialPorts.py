@@ -7,7 +7,7 @@ import serial.tools.list_ports
 import asyncio
 import time
 import threading
-from octoprint_speroplugin.PluginEnums import ShieldState,BedPosition,EjectState
+from octoprint_speroplugin.PluginEnums import ShieldState,BedPosition,ItemState
 
 class SerialPorts(object):
     onStateChange = None 
@@ -121,8 +121,7 @@ class SerialPorts(object):
                 if data[1]=="Idle\n":
                     self.state=ShieldState.IDLE
                 if data[1]=="SequenceError\n":
-                    self.state=EjectState.EJECT_FAIL
-                    
+                    self.state=ShieldState.EJECTFAIL                    
                     
 
                 

@@ -242,7 +242,8 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                 self.updateItemState(self.currentQueue["id"],self.itemState)
                 self.messageToJs({'itemState':self.itemState})
 
-            if self.serial.state==ItemState.EJECT_FAIL:
+            if self.serial.state==ShieldState.EJECTFAIL:
+                self.itemState=ItemState.EJECT_FAIL
                 self.queueState=QueueState.PAUSED
                 self.messageToJs({'itemState':self.itemState,"queueState":self.queueState})
 
@@ -267,7 +268,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                self.currentQueue["items"][x]["state"]="Await"
                
             self.updateItemState(self.currentQueue["id"],self.itemState)
-            self.updateLastQueue(self.currentQueue["id"])
+         
 
             self.queueFinished=True
             self.queueState=QueueState.IDLE
@@ -584,6 +585,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                 if len(self.currentQueue["items"]) > 0:
                     self.itemState=ItemState.PRINTING
                     self.messageToJs({'itemState':self.itemState})
+                    self.updateLastQueue(self.currentQueue["id"])
                     self.startPrint()
            
 
@@ -594,6 +596,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
 
     def updateLastQueue(self,queueId):
+        print("updated")
         Exist = Query()
         inDb = self.dbQueue.search(Exist.id == queueId)
         lastQueue = Query()
@@ -607,12 +610,17 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             self.dbQueue.update({
                 'last':"last_queue"
             },Exist.id==queueId)
+            
+            
+            
 
 
     def updateItemState(self,queueId,itemState):
         Exist = Query()
         inDb = self.dbQueue.search(Exist.id == queueId)
-        self.currentQueue["items"][self.currentIndex]["state"]=itemState
+        
+        if len(self.currentQueue["items"])>0:
+             self.currentQueue["items"][self.currentIndex]["state"]=itemState
         if(len(inDb) > 0 and inDb != None):
             self.dbQueue.update({
                 'items': self.currentQueue["items"],

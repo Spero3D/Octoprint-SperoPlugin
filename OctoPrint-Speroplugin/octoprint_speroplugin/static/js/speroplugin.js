@@ -453,7 +453,6 @@ $(function() {
                 self.currentId =self.selectedQueue().id
             }
             try {
-                console.log(self.queuesIndex())
                 $.ajax({
                     url: "plugin/speroplugin/save-to-database",
                     method: "POST",
@@ -565,7 +564,6 @@ $(function() {
                     success: function (r) {  
                     self.selectedQueue((self.currentQueue()))
                     self.currentItems(self.currentQueue().items)
-                    console.log(self.queuesIndex())
                     self.itemCount=0
                     },
                     error: function (e) {

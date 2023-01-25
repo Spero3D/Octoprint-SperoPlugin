@@ -14,7 +14,7 @@ class ItemState(str,Enum):
     AWAIT="Await"
     PRINTING="Printing"
     EJECTING="Ejecting"
-    EJECT_FAIL="eject fail"
+    EJECT_FAIL="EjectFaild"
     CANCELLED="Cancelled"
     CANCELLING="Cancelling"
     PAUSED="Paused"
@@ -67,7 +67,7 @@ class EjectState(str,Enum):
 class ShieldState(str,Enum):
     IDLE="Idle"
     ISINSEQUENACE="isInSequence"
-    EJECTFAIL="ejectFaild"
+    EJECTFAIL="EjectFaild"
     
  
      
