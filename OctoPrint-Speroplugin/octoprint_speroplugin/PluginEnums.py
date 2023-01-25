@@ -4,12 +4,12 @@ from enum import Enum
 
 
 
-class UsbState(str,Enum):
-    Searching='Searching'
-    Connected='Connected'
+class isShieldConnected(str,Enum):
+    DISCONNECTED='Disconnected'
+    CONNECTED='Connected'
 
 
-class ItemState(Enum):
+class ItemState(str,Enum):
     
     AWAIT="Await"
     PRINTING="Printing"
@@ -17,37 +17,38 @@ class ItemState(Enum):
     EJECT_FAIL="eject fail"
     CANCELLED="Cancelled"
     CANCELLING="Cancelling"
-    FAILLED="Failed"
     PAUSED="Paused"
     PAUSING="Pausing"
     FINISHED="Finished"
-    def __str__(self):
-     return str(self.value)
+    FAILED="Failed"
+  
+   
 
-class QueueState(Enum):
+class QueueState(str,Enum):
     
-    IDLE="IDLE"
-    STARTED="STARTED"
-    RUNNING="RUNNING"
-    CANCELLED="CANCELLED"
-    PAUSED="PAUSED"
+    IDLE="Idle"
+    STARTED="Started"
+    RUNNING="Running"
+    CANCELLED="Cancelled"
+    PAUSED="Paused"
+    FAILED="Failed"
+    FINISHED="Finished"
 
-    def __str__(self):
-     return str(self.value)
+   
 
 
 
-class BedPosition(Enum):
+
+class BedPosition(str,Enum):
     MIDDLE="Middle"
     FRONT="Front"
     BACK="Back"
     
-    def __str__(self):
-     return str(self.value)
+  
 
 
 
-class MotorState(Enum):
+class MotorState(str,Enum):
     IDLE="Idle"
     FORWARD="Forward"
     BACKWARD="Backward"
@@ -55,21 +56,20 @@ class MotorState(Enum):
 
     
     
-class EjectState(Enum):
-    IDLE="IDLE"
-    WAIT_FOR_TEMP="WAIT_FOR_TEMP"
-    EJECTING="EJECTING"
-    EJECTING_FINISHED="EJECTING_FINISHED"
-    EJECT_FAİL="EJECT_FAIL"
+class EjectState(str,Enum):
+    IDLE="Idle"
+    WAIT_FOR_TEMP="WaitForTemp"
+    EJECTING="Ejecting"
+    EJECTING_FINISHED="EjectingFinished"
+    EJECT_FAIL="EjectFail"
     
     
-class ShieldState(Enum):
-    IDLE="IDLE"
-    ISINSEQUENACE="ISINSEQUENACE"
+class ShieldState(str,Enum):
+    IDLE="Idle"
+    ISINSEQUENACE="isInSequence"
+    EJECTFAIL="ejectFaild"
     
-    def __str__(self):
-     return str(self.value)
-     
+ 
      
 
 
