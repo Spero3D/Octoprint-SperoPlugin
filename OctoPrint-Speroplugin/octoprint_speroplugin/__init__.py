@@ -242,19 +242,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
 
             self.nextItem()
-        # else:
-
-        #     if self.serial.state==ShieldState.IDLE:
-        #         # self.itemState=ItemState.FINISHED 
-        #         # self.ejectState=EjectState.EJECTING_FINISHED
-        #         # self.currentQueue["items"][self.currentIndex]["state"]=self.itemState
-        #         # self.updateItemState(self.currentQueue["id"],self.itemState)
-        #         # self.messageToJs({'itemState':self.itemState})
-
-        #     if self.serial.state==ShieldState.EJECTFAIL:
-        #         self.itemState=ItemState.EJECT_FAIL
-        #         self.queueState=QueueState.PAUSED
-        #         self.messageToJs({'itemState':self.itemState,"queueState":self.queueState})
 
 
           
