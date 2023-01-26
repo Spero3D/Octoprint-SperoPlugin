@@ -70,6 +70,12 @@ class ShieldState(str,Enum):
     EJECTFAIL="EjectFaild"
     
  
+class MotorState(str,Enum):
+    IDLE="Idle"
+    FORWARD="Forward"
+    BACKWARD="Backward"
+    
+ 
      
 
 

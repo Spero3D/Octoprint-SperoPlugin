@@ -1,13 +1,11 @@
 import sys
 import glob
 import serial
-from enum import Enum
 import serial.tools
 import serial.tools.list_ports
-import asyncio
 import time
 import threading
-from octoprint_speroplugin.PluginEnums import ShieldState,BedPosition,ItemState
+from octoprint_speroplugin.PluginEnums import ShieldState,BedPosition,MotorState
 
 class SerialPorts(object):
     onStateChange = None 
@@ -16,9 +14,9 @@ class SerialPorts(object):
     
     def __init__(self):
         self.state = ShieldState.IDLE
+        self.bedState=BedPosition.MIDDLE
+        self.motorState=MotorState.IDLE
         self.readthread=None
-        self.bedState="Middle"
-        self.motorState="Idle"
         self.connection=False
         self.listThread =None
         self.serialConnection=None
@@ -108,8 +106,10 @@ class SerialPorts(object):
 
 
     def handle_data(self,data):
-        data=data.replace("[INFO]"," ")
-        data=data.split(":")     
+        data=data.replace("[INFO]"," ")    #trim spaces
+        data=data.split(":")  
+        self.state=ShieldState.ISINSEQUENACE   
+        self.callOnStateChange()
         if len(data)>1:   
             if data[0]=="  M":
                 self.motorState=data[1]
@@ -120,8 +120,10 @@ class SerialPorts(object):
             if data[0]=="  C":
                 if data[1]=="Idle\n":
                     self.state=ShieldState.IDLE
+                    self.callOnStateChange()
                 if data[1]=="SequenceError\n":
-                    self.state=ShieldState.EJECTFAIL                    
+                    self.state=ShieldState.EJECTFAIL    
+                    self.callOnStateChange()                
                     
 
                 
@@ -146,11 +148,11 @@ class SerialPorts(object):
         
 
     def callOnStateChange(self):
-        self.connectt=self.connection
+        self.connection=self.connection
         self.bedPosition=self.bedState
         self.motorPosition=self.motorState
         if self.onStateChange:
-            self.onStateChange(self.connectt,self.bedPosition,self.motorPosition,self.ports)
+            self.onStateChange(self.connection,self.bedPosition,self.motorPosition,self.ports,self.state)
 
 
     def sendActions(self,a):

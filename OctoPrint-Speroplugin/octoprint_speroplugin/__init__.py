@@ -2,14 +2,12 @@
 # License: AGPLv3
 
 from __future__ import absolute_import
-from threading import Timer
 from octoprint_speroplugin.PluginEnums import BedPosition, EjectState, ItemState, MotorState, QueueState,isShieldConnected,ShieldState
 from tinydb.database import TinyDB
 from tinydb.queries import Query
 import copy
 from .SerialPorts import SerialPorts
 import os
-import shutil
 import json
 import flask
 import uuid
@@ -31,7 +29,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
                         ):
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-    FILE_DIR = None
 
 
   
@@ -52,29 +49,26 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         self.isShieldConnected = isShieldConnected.DISCONNECTED           #isShieldConnected
         self.currentIndex=0                           #queuenin o anki indexsi
         self.currentQueue=None                          #su anki queue
-        self.totalEstimatedTime = 0                     #priniting olan itemin basım zamanı
         self.queuesIndex=0   #queueların index numarası queuelara index numarası verdim başlangıcta
-        self.change=None    #cancelling yaparken state değişikliğini tetikletmek için
+        self.printerStateChange=False #değiş    
         self.dbQueue=None
         self.databasePorts=None
         self.targetBedTemp=40
         self.repeatQueue=False
-        self.queueFinished=False
-        self.queueName=None
 
 
 
     def on_startup(self, host, port):
-        fileDir = os.path.join(self.ROOT_DIR,"queues.json")
-        fileExist = os.path.exists(fileDir)
+        self.queueFilePath = os.path.join(self.ROOT_DIR,"queues.json")
+        fileExist = os.path.exists( self.queueFilePath)
         if not fileExist:
-            open(fileDir, 'w+')
-        self.dbQueue = TinyDB(fileDir)
-        fileDir2 = os.path.join(self.ROOT_DIR,"ports.json")
-        fileExist = os.path.exists(fileDir2)
-        self.dbPorts = TinyDB(fileDir2)
+            open( self.queueFilePath, 'w+')
+        self.dbQueue = TinyDB( self.queueFilePath)
+        self.portFilePath = os.path.join(self.ROOT_DIR,"ports.json")
+        fileExist = os.path.exists( self.portFilePath)
+        self.dbPorts = TinyDB( self.portFilePath)
         if not fileExist:
-            open(fileDir, 'w+')
+            open( self.portFilePath, 'w+')
             
         return super().on_startup(host, port)
 
@@ -115,7 +109,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             self.currentItems=self.currentQueue["items"]
             self.queues.append(self.currentQueue)
             self.currentTime = 0
-            self.totalEstimatedTime = 0
             self.messageToJs({'currentIndex':self.currentIndex,'currentQueue':self.currentQueue,'currentItems':self.currentItems})
 
 
@@ -148,7 +141,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             self.queueState = QueueState.RUNNING
             self.itemState=ItemState.PRINTING
          
-            self.serial.state="printing"
             self.currentQueue["items"][self.currentIndex]["state"]=self.itemState
             self.updateItemState(self.currentQueue["id"],self.itemState)
 
@@ -162,15 +154,15 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
 
         if event == "PrintFailed" or event == "PrintCanceled":
-            self.change="yes" 
+            self.printerStateChange=True 
 
 
 
         if event == "PrinterStateChanged" and self.queueState != "Paused":
-            if self.change=="yes":
+            if self.printerStateChange==True:
                 self.itemState=ItemState.FAILED
                 self.queueState = QueueState.CANCELLED
-                self.change="no"  
+                self.printerStateChange=False  
 
             state = self._printer.get_state_id()
 
@@ -190,7 +182,21 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
 
 
-    def getStates(self,connetion,bed,motor,ports):           #raspi baglı durumlar için bu yüzden şuan yorum satırında
+    def getStates(self,connetion,bed,motor,ports,ejectFinish):           #raspi baglı durumlar için bu yüzden şuan yorum satırında
+        print(ejectFinish)
+        if ejectFinish==ShieldState.IDLE:
+            self.itemState=ItemState.FINISHED 
+            self.ejectState=EjectState.EJECTING_FINISHED
+            self.currentQueue["items"][self.currentIndex]["state"]=self.itemState
+            self.updateItemState(self.currentQueue["id"],self.itemState)
+            self.messageToJs({'itemState':self.itemState})
+            self.ejectFinish()
+            
+        if ejectFinish==ShieldState.EJECTFAIL:   
+            self.itemState=ItemState.EJECT_FAIL
+            self.queueState=QueueState.PAUSED
+            self.messageToJs({'itemState':self.itemState,"queueState":self.queueState})
+        
         if connetion==True:
             self.isShieldConnected=isShieldConnected.CONNECTED
         if connetion==False:
@@ -208,19 +214,19 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
     def startEject(self):
         self.serial.sendActions("eject")
         self.ejectState=EjectState.EJECTING
-        self.waitingEject()
+        
 
 
+    
 
-    def waitingEject(self):
+    def ejectFinish(self):            
         if self.ejectState ==EjectState.EJECTING_FINISHED:
-
             self.itemState=ItemState.FINISHED
             self.currentQueue["items"][self.currentIndex]["state"]=self.itemState
             self.updateItemState(self.currentQueue["id"],self.itemState)
             self.messageToJs({'itemState':self.itemState})
             
-            if self.queueState=='Running':
+            if self.queueState==QueueState.RUNNING:
                 self.currentIndex=self.currentIndex+1
             if(self.queueState==QueueState.CANCELLED):
                 self.repeatQueue=False
@@ -236,34 +242,28 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
 
             self.nextItem()
-        else:
+        # else:
 
-            if self.serial.state==ShieldState.IDLE:
-                self.itemState=ItemState.FINISHED 
-                self.ejectState=EjectState.EJECTING_FINISHED
-                self.currentQueue["items"][self.currentIndex]["state"]=self.itemState
-                self.updateItemState(self.currentQueue["id"],self.itemState)
-                self.messageToJs({'itemState':self.itemState})
+        #     if self.serial.state==ShieldState.IDLE:
+        #         # self.itemState=ItemState.FINISHED 
+        #         # self.ejectState=EjectState.EJECTING_FINISHED
+        #         # self.currentQueue["items"][self.currentIndex]["state"]=self.itemState
+        #         # self.updateItemState(self.currentQueue["id"],self.itemState)
+        #         # self.messageToJs({'itemState':self.itemState})
 
-            if self.serial.state==ShieldState.EJECTFAIL:
-                self.itemState=ItemState.EJECT_FAIL
-                self.queueState=QueueState.PAUSED
-                self.messageToJs({'itemState':self.itemState,"queueState":self.queueState})
+        #     if self.serial.state==ShieldState.EJECTFAIL:
+        #         self.itemState=ItemState.EJECT_FAIL
+        #         self.queueState=QueueState.PAUSED
+        #         self.messageToJs({'itemState':self.itemState,"queueState":self.queueState})
 
 
-            waitTimer2 = Timer(1,self.waitingEject,args=None,kwargs=None)
-            waitTimer2.start()
+          
 
     def nextItem(self):            #eject biitikten sonra queuenin statine göre bir sonraki işlem
-        if self.queueState == QueueState.RUNNING:
-            if(self.queueState == QueueState.RUNNING and self.ejectState!=EjectState.EJECT_FAIL):
-                self.messageToJs({'currentIndex':self.currentIndex})
-                self.startPrint()
-            else:
-                print("print and queue finished")
-        else:
-            print("queue and print finished")
-
+        if(self.queueState == QueueState.RUNNING and self.ejectState!=EjectState.EJECT_FAIL):
+            self.messageToJs({'currentIndex':self.currentIndex})
+            self.startPrint()
+       
 
     def doItemsStateAwait(self) :   #queuenin bittigi ya da cancel olduğu durumlarda queuenin butun itemlerini Awaitte cekmek için
 
@@ -273,11 +273,10 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             self.updateItemState(self.currentQueue["id"],self.itemState)
          
 
-            self.queueFinished=True
             self.queueState=QueueState.IDLE
             self.messageToJs({'queueState':self.queueState })
-            self.messageToJs({'queueFinished':self.queueFinished })
-            self.queueFinished=False
+            self.messageToJs({'queueFinished':"true" })
+          
             if self.repeatQueue==True:
       
                 self.messageToJs({'repeatQueue':self.repeatQueue})
@@ -603,7 +602,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                 res.status_code = 200
                 return res
             except json.decoder.JSONDecodeError as e:
-                os.remove("/home/spero-ahmet/devel/OctoPrint-Speroplugin/octoprint_speroplugin/queues.json")
+                os.remove(self.queueFilePath)
 
     def updateLastQueue(self,queueId):
         Exist = Query()
@@ -677,10 +676,9 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         self.dbQueue.insert(self.currentQueue)
         self.queues.append(self.currentQueue)
         self.currentTime = 0
-        self.totalEstimatedTime = 0 
         self.currentItems=self.currentQueue["items"]
-        self.queueName=self.currentQueue["name"]
-        self.messageToJs({'queueName':self.queueName,'queues':self.queues,'queuesIndex':self.queuesIndex,'currentItems':self.currentItems,'currentQueue':self.currentQueue})
+        queueName=self.currentQueue["name"]
+        self.messageToJs({'queueName':queueName,'queues':self.queues,'queuesIndex':self.queuesIndex,'currentItems':self.currentItems,'currentQueue':self.currentQueue})
 
         res = jsonify(success=True)
         res.status_code = 200
@@ -824,7 +822,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         x = parsed_temperatures.get('B')
         if x:
             currentBedTemp = x[0]
-            if self.ejectState == "WaitForTemp":
+            if self.ejectState == EjectState.WAIT_FOR_TEMP:
 
                 self.checkBedTemp(currentBedTemp)
 
