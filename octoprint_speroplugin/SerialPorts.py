@@ -1,28 +1,23 @@
 import sys
 import glob
 import serial
-from enum import Enum
 import serial.tools
 import serial.tools.list_ports
-import asyncio
 import time
 import threading
-from octoprint_speroplugin.PluginEnums import ShieldState,BedPosition,EjectState
+from octoprint_speroplugin.PluginEnums import ShieldState,BedPosition,MotorState
 
 class SerialPorts(object):
     onStateChange = None 
-    connectedSerial=None
-    usb=None
     serialId=None
     ports=[]
     
     def __init__(self):
-        self.state = ShieldState.IDLE.value
+        self.state = ShieldState.IDLE
+        self.bedState=BedPosition.MIDDLE
+        self.motorState=MotorState.IDLE
         self.readthread=None
-        self.bedState="Middle"
-        self.motorState="Idle"
         self.connection=False
-        self.databasePorts=None
         self.listThread =None
         self.serialConnection=None
        
@@ -65,7 +60,6 @@ class SerialPorts(object):
 
     def serialConnect(self,p):
         self.serialConnection=serial.Serial(port=p)
-        print("connected") 
         self.connection=True
         self.callOnStateChange()
        
@@ -76,14 +70,12 @@ class SerialPorts(object):
 
     def selectedPortId(self,p): 
         self.serialId = p
-        print(self.serialId)
         self.portList()
         
 
     def portList(self):
             self.connection=False
             self.callOnStateChange()
-        
             while self.connection==False:
                 self.ports=self.serialPorts()
                 self.callOnStateChange()
@@ -97,7 +89,6 @@ class SerialPorts(object):
                             break
                         else:
                             time.sleep(0.5)
-                            print("please select port")
                             if self.connection==True:
                                 break
                             self.ports=self.serialPorts()   
@@ -115,8 +106,10 @@ class SerialPorts(object):
 
 
     def handle_data(self,data):
-        data=data.replace("[INFO]"," ")
-        data=data.split(":")     
+        data=data.replace("[INFO]"," ")    #trim spaces
+        data=data.split(":")  
+        self.state=ShieldState.ISINSEQUENACE   
+        self.callOnStateChange()
         if len(data)>1:   
             if data[0]=="  M":
                 self.motorState=data[1]
@@ -125,13 +118,12 @@ class SerialPorts(object):
                 self.bedState=data[1]
                 self.callOnStateChange()
             if data[0]=="  C":
-                print(data)
                 if data[1]=="Idle\n":
-                    self.state=ShieldState.IDLE.value
+                    self.state=ShieldState.IDLE
+                    self.callOnStateChange()
                 if data[1]=="SequenceError\n":
-                    print("error")
-                    self.state=EjectState.EJECT_FAIL.value
-                    
+                    self.state=ShieldState.EJECTFAIL    
+                    self.callOnStateChange()                
                     
 
                 
@@ -142,7 +134,6 @@ class SerialPorts(object):
                 reading = self.serialConnection.readline().decode()
                 self.handle_data(reading)
             except  serial.serialutil.SerialException:
-                print("connection lost")
                 self.serialConnection.close()
                 self.portList()
                 
@@ -157,11 +148,11 @@ class SerialPorts(object):
         
 
     def callOnStateChange(self):
-        self.connectt=self.connection
+        self.connection=self.connection
         self.bedPosition=self.bedState
         self.motorPosition=self.motorState
         if self.onStateChange:
-            self.onStateChange(self.connectt,self.bedPosition,self.motorPosition,self.ports)
+            self.onStateChange(self.connection,self.bedPosition,self.motorPosition,self.ports,self.state)
 
 
     def sendActions(self,a):
@@ -172,7 +163,7 @@ class SerialPorts(object):
         if a=="forward":
            self.serialConnection.write("[CMD] MotorForward|123\n".encode())
         if a=="eject":
-            self.state=ShieldState.ISINSEQUENACE.value
+            self.state=ShieldState.ISINSEQUENACE
           
             self.serialConnection.write("[CMD] SequenceStart|123\n".encode())      
       
@@ -180,9 +171,5 @@ class SerialPorts(object):
     
 
 
-    # def controlInit(self):
-    #     self.sc.checkConnection(self.s)
-      
-        
 
 SerialPorts()   

@@ -4,9 +4,9 @@ from enum import Enum
 
 
 
-class UsbState(str,Enum):
-    Searching='Searching'
-    Connected='Connected'
+class isShieldConnected(str,Enum):
+    DISCONNECTED='Disconnected'
+    CONNECTED='Connected'
 
 
 class ItemState(str,Enum):
@@ -14,7 +14,7 @@ class ItemState(str,Enum):
     AWAIT="Await"
     PRINTING="Printing"
     EJECTING="Ejecting"
-    EJECT_FAIL="eject fail"
+    EJECT_FAIL="EjectFaild"
     CANCELLED="Cancelled"
     CANCELLING="Cancelling"
     PAUSED="Paused"
@@ -24,7 +24,7 @@ class ItemState(str,Enum):
   
    
 
-class QueueState(Enum):
+class QueueState(str,Enum):
     
     IDLE="Idle"
     STARTED="Started"
@@ -32,24 +32,23 @@ class QueueState(Enum):
     CANCELLED="Cancelled"
     PAUSED="Paused"
     FAILED="Failed"
+    FINISHED="Finished"
 
-    def __str__(self):
-        return str(self.value)
-
-
+   
 
 
-class BedPosition(Enum):
+
+
+class BedPosition(str,Enum):
     MIDDLE="Middle"
     FRONT="Front"
     BACK="Back"
     
-    def __str__(self):
-         return str(self.value)
+  
 
 
 
-class MotorState(Enum):
+class MotorState(str,Enum):
     IDLE="Idle"
     FORWARD="Forward"
     BACKWARD="Backward"
@@ -57,7 +56,7 @@ class MotorState(Enum):
 
     
     
-class EjectState(Enum):
+class EjectState(str,Enum):
     IDLE="Idle"
     WAIT_FOR_TEMP="WaitForTemp"
     EJECTING="Ejecting"
@@ -65,13 +64,18 @@ class EjectState(Enum):
     EJECT_FAIL="EjectFail"
     
     
-class ShieldState(Enum):
+class ShieldState(str,Enum):
     IDLE="Idle"
     ISINSEQUENACE="isInSequence"
+    EJECTFAIL="EjectFaild"
     
-    def __str__(self):
-     return str(self.value)
-     
+ 
+class MotorState(str,Enum):
+    IDLE="Idle"
+    FORWARD="Forward"
+    BACKWARD="Backward"
+    
+ 
      
 
 

@@ -72,13 +72,7 @@
 
 }
 
-#tab_plugin_speroplugin .state-container .motor-move-buttons i{
 
- margin-right: 8px;
- padding-top: 8px;
- 
-
-}
 #tab_plugin_speroplugin .state-container .motor-move-buttons button{
   height: 25px;
   display: flex;
@@ -140,7 +134,7 @@
   color: #777777;
   margin-top: 8px;
   margin-bottom: 12px;
-  padding-left: 24px;
+  padding-left: 16px;
 
   
  }
@@ -187,7 +181,7 @@
 
 
 #tab_plugin_speroplugin .queue-row-container {
-  margin-left: 16px;
+  margin-left: 10px;
   font-size: 12px;
   display: flex;
 }
@@ -198,6 +192,7 @@
   
 
 }
+
 
 #tab_plugin_speroplugin .queue-inner-row-container .circle-state {
   
@@ -248,7 +243,7 @@ margin-left: 4px;
  }
  
  #tab_plugin_speroplugin .queue-item-adjust-buttons{
-  margin-left: 134px;
+  margin-left: 100px;
   margin-bottom: 4px;
 
  }

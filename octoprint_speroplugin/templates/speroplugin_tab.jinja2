@@ -104,6 +104,9 @@
         <i class="	fa fa-repeat"></i>  
       </button>
 
+
+ 
+
       <button data-bind="click: startQueue , visible: queueState() == 'Idle'" title="Start printing">
         <i class="	fas fa-play"></i>  
       </button>
@@ -126,10 +129,10 @@
 
       <div class="pause-cancel-buttons">
         <button  data-bind="click: function(){$root.pauseStopQueue()}, visible:  queueState() != 'Cancelled' &&!(queueState() == 'Paused') && !(queueState() == 'Idle'&&itemState() != 'Cancelling')&& itemState()!='Cancelling'" title="Pause printing">
-          <i class="	fas fa-pause"> </i>  </button  data-bind="click: function(){$root.pauseResumeQueue()},visible: (queueState() == 'Cancelled'|| queueState() == 'Paused') && (queueState() != 'Idle'&&itemState() != 'Cancelling')" title="Resume printing">
+          <i class="	fas fa-pause"> </i> 
         </button >
           
-        <button data-bind="click: function(){$root.pauseResumeQueue()},visible: (queueState() == 'Cancelled'|| queueState() == 'Paused') && (queueState() != 'Idle'&&itemState() != 'Cancelling')" title="Resume printing">
+        <button data-bind="click: function(){$root.pauseResumeQueue()},visible: (queueState() == 'Cancelled'|| queueState() == 'Paused') && (queueState() != 'Idle' && (itemState() == 'Finished' || itemState() == 'EjectFaild' || itemState() == 'Failed'  ))" title="Resume printing">
           <i class="	fas fa-play"> </i> 
         </button>
           
@@ -158,6 +161,7 @@
               <span data-bind="text: $data.index()"></span>
               
               <span class=queue-name  data-bind="text: name"></span>
+              
 
               <!-- ko if: $data.state() === "Await" -->
                   <div>
@@ -247,7 +251,7 @@
               <div class=queue-item-adjust-buttons data-bind="visible:($root.queueState() == 'Idle' || $root.queueState() == 'Paused')">
 
 
-                <button data-bind="click: function() { $root.queueItemDuplicat($data.index())}"><i class="	fas fa-copy"></i>  </button>
+                <button data-bind="click: function() { $root.queueItemDuplicate($data.index())}"><i class="	fas fa-copy"></i>  </button>
 
                 <button data-bind="click: function() { $root.queueRemoveItem($data.index())}"><i class="	fas fa-trash"></i> </button>
                 <button data-bind='click: function() { $root.queueItemUp($data.index())}'><i class="fas fa-angle-up"></i> </button>        

@@ -22,30 +22,25 @@ $(function() {
         self.queueName = ko.observable(0);
         self.queuesIndex=ko.observable(0);
         self.currentQueue=ko.observable(0);
-        self.ejectFail=ko.observable(0);
         self.createQueueEnable=ko.observable(0);
+        self.repeatQueuejs=ko.observable("off");
         self.repeatQueue=ko.observable("off");
-
+        self.queueFinished=ko.observable(0)
         self.itemState=ko.observable();
         self.targetBedTemp=ko.observable(0);
         self.firstQueue=true;
-
-
         self.printerState = parameters[0];
         self.connectionState = parameters[1];
         self.loginState = parameters[2];
         self.files = parameters[3];
         self.settings = parameters[4];
         self.temperature = parameters[5];
-
-        self.settings2 = ko.observable({});             //settings parametresi var diye setting2 diye adlandırdım gelen ayarları
         self.queues = ko.observableArray([]);
         self.ports= ko.observableArray([]);
         self.currentItems = ko.observableArray([]);
         self.queueId = ko.observable(null);
         self.itemInfo = ko.observable();               //sıcaklık verisini jinjaya gönderme
         self.itemCount = 0;                            //item sayısı
-        self.totalEstimatedTime = ko.observable(0);
 
 
 
@@ -53,10 +48,7 @@ $(function() {
 
         self.onBeforeBinding = function () {
             try {
-                
                 self.reloadPlugin();
-        
-                
                 self.fileDatas();
             } catch (error) {
                 console.log("onBeforeBinding => ", error);
@@ -67,12 +59,9 @@ $(function() {
         self.startQueue = function () {
             try {
                 self.fileDatas();
-             
-
                 $.ajax({
                     url:
-                        "plugin/speroplugin/startQueue?totalEstimatedTime=" +
-                        self.totalEstimatedTime(),
+                        "plugin/speroplugin/start-queue",
                     method: "GET",
                     dataType: "json",
                     headers: {
@@ -80,14 +69,8 @@ $(function() {
                     },
                     data: {},
                     success() {
-                      self.itemState("Printing")
-                      console.log("printStarted")
                     },
                 });
-
-
-
-
             } catch (error) {
                 console.log("start_queue => ", error);
             }
@@ -98,7 +81,6 @@ $(function() {
 
         self.pointer = function (index) {             // tıkladıgım pointerın indexsini döndürür
             try {
-
                 if (index > 0) {
                     $.ajax({
                         url: "plugin/speroplugin/pointer?index=" + index,
@@ -115,52 +97,36 @@ $(function() {
         };
 
         self.onDataUpdaterPluginMessage = function (plugin, data) {
-
             if (plugin == "speroplugin" && !_.isEmpty(data)) {
-
                 try {
                    Object.entries(data).forEach((v)=>{
                         self[v[0]](v[1])
                     })
-          
                     var message =
-                        self.temp().toString() +
-                        " / " +
-                        self.targetBedTemp().toString() +
+                        self.temp().toString() + " / " +self.targetBedTemp().toString() +
                         " C";
                     self.itemInfo(message);
-                   
-
-                    
                     if(self.firstQueue==true && self.currentQueue()!="0"){
                     self.firstQueue=false
                     self.selectedQueue(self.currentQueue())
                     }
 
-
-                    if(self.queueState()=="Idle"){
-                        self.itemState("Await");
-                        for(let i=0;i<self.currentItems().length;i++){
-
-                            var item = self.currentItems()[i];
-                            item().state(self.itemState());
+                    if(self.queueFinished()==true){
+                        self.queueFinished("false")
+                        self.reloadPlugin()
 
                          }
-                    }
-
-                 
-                 
-
                   
-
-                    if (self.queueState()=='Idle'){
-                        for (let i = 0; i < self.currentQueue().length; i++){
-                            self.currentQueue()["items"][i]["state"] = "Await"
-
+                    if(self.repeatQueue()==true){
+                        self.repeatQueue("false")
+                        self.startQueue()
 
                         }
-                    }
 
+                         
+          
+         
+               
 
                 
 
@@ -178,9 +144,8 @@ $(function() {
 
         self.pauseStopQueue = function (index) {
             try {
-
                     $.ajax({
-                        url: "plugin/speroplugin/pauseStopQueue",
+                        url: "plugin/speroplugin/pause-stop-queue",
                         method: "GET",
                         dataType: "json",
                         headers: {
@@ -199,7 +164,7 @@ $(function() {
         self.cancelQueue = function () {
             try {
                 $.ajax({
-                    url: "plugin/speroplugin/cancelQueue",
+                    url: "plugin/speroplugin/cancel-queue",
                     method: "GET",
                     dataType: "json",
                     headers: {
@@ -214,7 +179,7 @@ $(function() {
         self.pauseResumeQueue = function () {
             try {
                  $.ajax({
-                    url: "plugin/speroplugin/pauseResumeQueue",
+                    url: "plugin/speroplugin/pause-resume-queue",
                     method: "GET",
                     dataType: "json",
                     headers: {
@@ -229,30 +194,19 @@ $(function() {
     };
 
         self.getQueue = function (id) {              // queue itemleri atıyor
-            console.log("current item2")
-            console.log(self.currentQueue())
-
             if(self.queueState()=='Idle'){
                  try {
                     $.ajax({
-                        url: "plugin/speroplugin/getQueue?id=" + id,
+                        url: "plugin/speroplugin/get-queue?id=" + id,
                         method: "GET",
                         dataType: "json",
                         headers: {
                             "X-Api-Key": UI_API_KEY,
-                            
                         },
                         success() {
-           
                             ko.utils.arrayFirst(self.queues(), function (item) {
-                                console.log("current item3")
-                                console.log(self.currentQueue())
-
-                                var reload =
-                                    self.queueState() == "Idle"
-
+                                var reload =self.queueState() == "Idle"
                                 if (item.id == id) {
-                                    
                                     self.queueId(item.id);
                                     self.queueName(item.name);
                                     self.reloadItems(self.currentQueue())
@@ -260,7 +214,6 @@ $(function() {
                                         items=self.currentQueue()["items"],
                                         (reload = reload)
                                     );
-
                                     return queue;
                                 }
                             });
@@ -273,33 +226,18 @@ $(function() {
       
         self.selectedQueue.subscribe(function (q) {
             if (q != undefined || q != null) {
-                
-                console.log("q")
-                console.log(q)
                 self.queueName(q.name)
                 self.queuesIndex(q.index)
                 self.queueId(q.id)
                 
-
-
                 if (q.items==[] || q.items==undefined) {
                   self.queueName(q.name)
-
                 }
                 else{
-                    console.log(q)
-
-                    console.log("current item1")
-                    console.log(self.currentQueue())
-
-
                     self.getQueue(q.id)
                     self.queueName(q.name)
                     self.queuesIndex(q.index)
-
                 }
-
-
             }
         });
 
@@ -308,9 +246,8 @@ $(function() {
                 self.portName(r)
                 self.sendPort(r)
                 data=self.selectedPort()
-
                 $.ajax({
-                    url: "plugin/speroplugin/selectedPort",
+                    url: "plugin/speroplugin/selected-port",
                     method: "POST",
                     contentType: "application/json",
                     dataType: "json",
@@ -319,75 +256,54 @@ $(function() {
                     },
                     data: json,
                 });
-
-
-
-
             }
         });
 
 
         self.repeatOnOff = function (data) {
-            if (self.repeatQueue() == "off") {
-                self.repeatQueue("on")
+            if (self.repeatQueuejs() == "off") {
+                self.repeatQueuejs("on")
                 document.getElementById("repeatButton").style.backgroundColor = "#3CAFEA";
                 data="on"
                 }
             else{
                 document.getElementById("repeatButton").style.backgroundColor = "rgb(249, 249, 249)";
-                self.repeatQueue("off")
+                self.repeatQueuejs("off")
                 data="off"
                 
             }
-            console.log(self.repeatQueue())
-
-
-
 
             try {
-                json = JSON.stringify({ request: data });
-                $.ajax({
-                    url: "plugin/speroplugin/repeatOnOff",
-                    method: "POST",
-                    contentType: "application/json",
-                    dataType: "json",
-                    headers: {
-                        "X-Api-Key": UI_API_KEY,
-                    },
-                    data: json,
-                });
-            } catch (error) {
-           
-            }
-        };
+                        json = JSON.stringify({ request: data });
+                        $.ajax({
+                            url: "plugin/speroplugin/repeat-on-off",
+                            method: "POST",
+                            contentType: "application/json",
+                            dataType: "json",
+                            headers: {
+                                "X-Api-Key": UI_API_KEY,
+                            },
+                            data: json,
+                        });
+                    } catch (error) {
+                   
+                    }
+
+        }
+
+
+        //   
+        // };
 
   
 
-        self.sendPort = function (data) {
-            try {
-                json = JSON.stringify({ request: data });
-                $.ajax({
-                    url: "plugin/speroplugin/sendPort",
-                    method: "POST",
-                    contentType: "application/json",
-                    dataType: "json",
-                    headers: {
-                        "X-Api-Key": UI_API_KEY,
-                    },
-                    data: json,
-                });
-            } catch (error) {
-                console.log("deviceControl => ", error);
-            }
-        };
+
 
         self.deviceControl = function (data) {
             try {
-
-
                 json = JSON.stringify({ request: data });
                 $.ajax({
-                    url: "plugin/speroplugin/deviceControl",
+                    url: "plugin/speroplugin/device-control",
                     method: "POST",
                     contentType: "application/json",
                     dataType: "json",
@@ -428,8 +344,6 @@ $(function() {
         self.checkPrinting = function () {
             try {
                 var have_print = false;
-
-              
                 return have_print;
             } catch (error) {
                 console.log("check_printing => ", error);
@@ -437,62 +351,20 @@ $(function() {
         };
 
 
-        self.printerState.printTime.subscribe(function (data) {
-            try {
-        
-                   {
-                        if (data != null || data != undefined) {
-                            self.currentItems()[self.currentIndex()]().timeLeft(self.printerState.printTimeLeft());
-                           
-                            self.totalPrintTime();
-                            self.sendTimeData();
-
-                            if(self.printerState.stateString()=="Printing"){
-                            
-                            self.currentItems()
-                            [self.currentIndex()]()
-                            .progress(
-                                self.printerState.progressString() ?? 0
-                            );
-
-
-
-                            }
-
-                        }
-                    }
-
-            } catch (error) {
-            
-            }
-        });
-
-
         self.itemState.subscribe(function (state) {
-         
-                
                 if (self.queueState != "Idle") {
                     var item = self.currentItems()[self.currentIndex()];
                   
                         switch (state) {
                             case "Printing":
-                                
-                                item().color("#F9F9F9");
                                 item().state(state);
                          
                                 break;
                             case "Ejecting":
-                                console.log("yes")
-                                item().color("#F9F9F9");
                                 item().state(state);
-                         
                                 break;  
-                           
-
                             case "Await":
-                                item().color("#F9F9F9");
                                 item().state(state);
-                         
                                 break;
                             case "Cancelling":
                                 item().state(state);
@@ -501,32 +373,24 @@ $(function() {
                                 item().state(state);
                                     break
                             case "Failed":
-                                item().state("state");
-                                    break
-                            
-                            case "Finished":
-                                var item = self.currentItems()[self.currentIndex()];
                                 item().state(state);
-                            
+                                    break
+                            case "Finished":
+                                item().state(state);
                                 break;
                             case "Pausing":
-                                item().color("#F9F9F9");
                                 item().state(state);
                                 break;
                             case "Paused":
-                                item().color("#F9F9F9");
                                 item().state(state);
                                 break;
 
                             case "EjectFaild":
                                 item().state(state);
                                 break;
-
                             case "Resummed":
                                     item().state(state);
                                     break;
-
-
                             case "Cancelled":
                                 item().state(state);
                                 break;
@@ -535,8 +399,6 @@ $(function() {
                         }
                 
                 }
-
-
         });
 
 
@@ -552,7 +414,7 @@ $(function() {
                 });
 
                 $.ajax({
-                    url: "plugin/speroplugin/queueAddItem",
+                    url: "plugin/speroplugin/queue-add-item",
                     type: "POST",
                     contentType: "application/json",
                     dataType: "json",
@@ -569,13 +431,13 @@ $(function() {
                 console.log("item add error ==> ", error);
             }
         };
+
         self.files.fileAdItem = function (data) {
             try {
                 var sd = "true";
                 if (data.origin == "local") {
                     sd = "false";
                 }
-
                 var item = {
                     name: data.name,
                     path: data.path,
@@ -592,27 +454,16 @@ $(function() {
             }
         };
         self.saveToDataBase = function (val,e) {
-
-          
             const newName = e.target.value??'';
-
-            self.currentId="sa"
- 
             if (self.selectedQueue()==undefined){
-              
                 self.currentId=self.currentQueue().id
-
-
             }
             else{
-
                 self.currentId =self.selectedQueue().id
             }
-         
             try {
-                console.log(self.queuesIndex())
                 $.ajax({
-                    url: "plugin/speroplugin/saveToDataBase",
+                    url: "plugin/speroplugin/save-to-database",
                     method: "POST",
                     contentType: "application/json",
                     dataType: "json",
@@ -627,10 +478,7 @@ $(function() {
 
                     }),
                     success() {
-
                         self.queueName(newName)
-
-
                     },
                 });
             } catch (error) {
@@ -643,14 +491,9 @@ $(function() {
 
             try {
                 if (items!=undefined){
-
-                    
                     self.itemCount = items.length;
-    
                 }
-              
                 var templist = [];
-
                 items.forEach((e) => {
                     items=self.currentQueue()["items"]
                     var temp = ko.observable({
@@ -692,27 +535,18 @@ $(function() {
         };
 
         self.reloadPlugin = function () {
-
-
             try {
                 $.ajax({
-                    url: "plugin/speroplugin/sendStartDatas",
+                    url: "plugin/speroplugin/send-start-datas",
                     type: "GET",
                     dataType: "json",
                     headers: {
                         "X-Api-Key": UI_API_KEY,
                     },
                     success: function (item) {
-
-
-                        
                         self.currentQueue(item["currentQueue"]["items"])
                         self.getQueue(item["currentQueue"]["id"])
-
-                        // self.reloadItems(item["currentQueue"]["id"])
-
-                   
-                        self.itemState("Finished");
+                        // self.itemState("Finished");
                         for(let i=0;i<self.currentItems().length;i++){
                             var item = self.currentItems()[i];
                             item().state(self.itemState());
@@ -730,7 +564,7 @@ $(function() {
             try {
              
                 $.ajax({
-                    url: "/plugin/speroplugin/createQueue",
+                    url: "/plugin/speroplugin/create-queue",
                     type: "GET",
                     dataType: "json",
                     headers: {
@@ -739,7 +573,6 @@ $(function() {
                     success: function (r) {  
                     self.selectedQueue((self.currentQueue()))
                     self.currentItems(self.currentQueue().items)
-                    console.log(self.queuesIndex())
                     self.itemCount=0
                     },
                     error: function (e) {
@@ -784,7 +617,7 @@ $(function() {
             try {
                 self.checkAddRemove("remove", data);
                 $.ajax({
-                    url: "plugin/speroplugin/queueRemoveItem?index=" + data,
+                    url: "plugin/speroplugin/queue-remove-item?index=" + data,
                     type: "DELETE",
                     dataType: "text",
                     headers: {
@@ -797,7 +630,6 @@ $(function() {
         };
         self.fileDatas = function (index = null) {
             try {
-
                 $.ajax({
                     url: "/api/files?recursive=true",
                     type: "GET",
@@ -859,82 +691,13 @@ $(function() {
                 console.log("fileDatas => ", error);
             }
         };
-        self.sendTimeData = function (
-            customIndex = null,
-            sendTotalTime = true
-        ) {
-            try {
-                customIndex =
-                    customIndex != null ? customIndex : self.currentIndex();
-
-                var time = JSON.stringify({
-                    index: customIndex,
-                    timeLeft:
-                        self.currentItems()[customIndex]().timeLeft() ?? 0,
-                    totalEstimatedTime: sendTotalTime
-                        ? self.totalEstimatedTime()
-                        : null,
-                });
-
-                $.ajax({
-                    url: "plugin/speroplugin/sendTimeData",
-                    method: "POST",
-                    dataType: "json",
-                    contentType: "application/json",
-                    headers: {
-                        "X-Api-Key": UI_API_KEY,
-                    },
-                    data: time,
-                    success() {},
-                });
-            } catch (error) {
-                console.log("sendTimeData => ", error);
-            }
-        };
-
-        self.totalPrintTime = function () {
-            try {
-                var totalTime = 0;
-                self.currentItems().forEach((element) => {
-                    totalTime += parseInt(element().timeLeft());
-                });
-                self.totalEstimatedTime(totalTime);
-            } catch (error) {
-                console.log("totalPrintTime error => ", error);
-            }
-        };
-
-        self.toHHMMSS = function (sec_num) {
-            try {
-                if (!isNaN(sec_num) && sec_num > 0 ) {
-                    var secs = parseInt(sec_num, 10);
-                    var hours = Math.floor(secs / 3600);
-                    var minutes = Math.floor((secs - hours * 3600) / 60);
-                    var seconds = secs - hours * 3600 - minutes * 60;
-
-                    if (hours < 10) {
-                        hours = "0" + hours;
-                    }
-                    if (minutes < 10) {
-                        minutes = "0" + minutes;
-                    }
-                    if (seconds < 10) {
-                        seconds = "0" + seconds;
-                    }
-
-                    return hours + ":" + minutes + ":" + seconds;
-                } else return "-";
-            } catch (error) {
-                console.log("toHHMMSS error ==> ", error);
-            }
-        };
         self.queueItemDown = function (index) {
             try {
                 if (index < self.currentItems().length - 1) {
                     self.rowChangeItems("down", index);
 
                     $.ajax({
-                        url: "plugin/speroplugin/queueItemDown?index=" + index,
+                        url: "plugin/speroplugin/queue-item-down?index=" + index,
                         type: "GET",
                         dataType: "json",
                         headers: { "X-Api-Key": UI_API_KEY },
@@ -946,6 +709,7 @@ $(function() {
                 console.log("queueItemDown error => ", error);
             }
         };
+
         self.rowChangeItems = function (type, index) {
             try {
                 var newIndex;
@@ -965,12 +729,13 @@ $(function() {
                 console.log("row change items error => ", error);
             }
         };
+
         self.queueItemUp = function (index) {
             try {
                 if (index > 0) {
                     self.rowChangeItems("up", index);
                     $.ajax({
-                        url: "plugin/speroplugin/queueItemUp?index=" + index,
+                        url: "plugin/speroplugin/queue-item-up?index=" + index,
                         type: "GET",
                         dataType: "json",
                         headers: { "X-Api-Key": UI_API_KEY },
@@ -984,7 +749,6 @@ $(function() {
         };
 
         self.checkCreateQueueEnable = function () {
-            console.log("hello")
             if(self.selectedQueue()==undefined){
                 self.createQueueEnable("idle")
                 }
@@ -992,15 +756,11 @@ $(function() {
                 self.createQueueEnable("false")
 
             }    
-
-
         };
-
-
         self.queueItemDuplicate = function (data) {
             try {
                 $.ajax({
-                    url: "plugin/speroplugin/queueItemDuplicate?index=" + data,
+                    url: "plugin/speroplugin/queue-item-duplicate?index=" + data,
                     type: "GET",
                     dataType: "text",
                     headers: {
@@ -1016,10 +776,9 @@ $(function() {
         };
         self.deleteFromDatabase = function () {
             try {
-               
                 $.ajax({
                     url:
-                        "plugin/speroplugin/deleteFromDatabase?id=" +
+                        "plugin/speroplugin/delete-from-database?id=" +
                         self.queueId(),
                     method: "DELETE",
                     dataType: "json",
@@ -1032,14 +791,11 @@ $(function() {
                         self.queueName(null);
                         self.queueId(null);
                         self.currentItems(null);
-
-
                     },
                 });
             } catch (error) {
                 console.log("deleteFromDatabase => ", error);
             }
-
 
         self.recursiveGetFiles = function (files) {
                 try {
@@ -1063,30 +819,6 @@ $(function() {
                 }
             };
 
-        self.toHHMMSS = function (sec_num) {
-            try {
-                if (!isNaN(sec_num) && sec_num > 0 ) {
-                    var secs = parseInt(sec_num, 10);
-                    var hours = Math.floor(secs / 3600);
-                    var minutes = Math.floor((secs - hours * 3600) / 60);
-                    var seconds = secs - hours * 3600 - minutes * 60;
-
-                    if (hours < 10) {
-                        hours = "0" + hours;
-                    }
-                    if (minutes < 10) {
-                        minutes = "0" + minutes;
-                    }
-                    if (seconds < 10) {
-                        seconds = "0" + seconds;
-                    }
-
-                    return hours + ":" + minutes + ":" + seconds;
-                } else return "-";
-            } catch (error) {
-                console.log("toHHMMSS error ==> ", error);
-            }
-        };
         };
     }
 
