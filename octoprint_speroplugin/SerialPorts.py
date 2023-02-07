@@ -20,6 +20,8 @@ class SerialPorts(object):
         self.connection=False
         self.listThread =None
         self.serialConnection=None
+        self.state=ShieldState.ISINSEQUENACE
+        
        
         pass
 
@@ -128,7 +130,7 @@ class SerialPorts(object):
 
                 
     def readFromPort(self):
-        print(self.serialConnection)
+        print("sa")
         while self.serialConnection.isOpen():
             try:
                 reading = self.serialConnection.readline().decode()

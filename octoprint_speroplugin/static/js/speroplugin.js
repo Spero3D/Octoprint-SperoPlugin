@@ -123,7 +123,6 @@ $(function() {
 
                         }
 
-                         
           
          
                
@@ -258,6 +257,27 @@ $(function() {
                 });
             }
         });
+
+
+          
+
+        self.sendPort = function (data) {
+            try {
+                json = JSON.stringify({ request: data });
+                $.ajax({
+                    url: "plugin/speroplugin/send-ports",
+                    method: "POST",
+                    contentType: "application/json",
+                    dataType: "json",
+                    headers: {
+                        "X-Api-Key": UI_API_KEY,
+                    },
+                    data: json,
+                });
+            } catch (error) {
+                console.log("deviceControl => ", error);
+            }
+        };
 
 
         self.repeatOnOff = function (data) {

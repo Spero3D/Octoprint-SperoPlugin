@@ -183,10 +183,21 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
 
     def getStates(self,connetion,bed,motor,ports,ejectFinish):           #raspi baglı durumlar için bu yüzden şuan yorum satırında
-        print(ejectFinish)
+     
+
+        
+        
+        
+        self.bedPosition=bed
+        self.motorState=motor
+        self.ports=ports
+        self.messageToJs({"isShieldConnected":self.isShieldConnected,'bedPosition':self.bedPosition,'motorState':self.motorState,'ports':self.ports})
+        
+        
         if ejectFinish==ShieldState.IDLE:
             self.itemState=ItemState.FINISHED 
             self.ejectState=EjectState.EJECTING_FINISHED
+            
             self.currentQueue["items"][self.currentIndex]["state"]=self.itemState
             self.updateItemState(self.currentQueue["id"],self.itemState)
             self.messageToJs({'itemState':self.itemState})
@@ -201,11 +212,8 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             self.isShieldConnected=isShieldConnected.CONNECTED
         if connetion==False:
             self.isShieldConnected=isShieldConnected.DISCONNECTED
-        self.bedPosition=bed
-        self.motorState=motor
-        self.ports=ports
-        self.messageToJs({"isShieldConnected":self.isShieldConnected,'bedPosition':self.bedPosition,'motorState':self.motorState,'ports':self.ports})
-
+            
+    
 
 
     def tryEject(self):                                 #eject için uygun sıcaklıgı saplamak için
@@ -269,7 +277,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                 self.messageToJs({'repeatQueue':self.repeatQueue})
          
             
-
 
     def startPrint(self, canceledIndex=None):
         if self.queueState == QueueState.RUNNING or self.queueState==QueueState.STARTED:
@@ -348,10 +355,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         last_db=self.dbQueue.search(item.last == "last_queue")
 
 
-        # if(len(last_db) > 1 and last_db != None):
-        #     self.dbQueue.update({
-        #         'last':"none"
-        #     },item.last == "last_queue")
 
 
         if(len(inDb) > 0 and inDb != None):
@@ -371,7 +374,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                     'index':index,
                     'last':"none",
                 })
-
 
 
 
@@ -398,6 +400,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         searchPort=Query()
         last_db=self.dbQueue.search(searchPort.items == "find")
 
+
         if(len(last_db) > 1 and last_db != None):
             self.dbQueue.update({
                 'find':"none"
@@ -409,13 +412,8 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             'findId': "find",
         })
 
+
         self.serial.selectedPortId(data["request"]["serial"])
-        self.selectedListId()
-        self.deviceControl()
-
-
-
-
 
         res = jsonify(success=True)
         res.status_code = 200
@@ -436,12 +434,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         res = jsonify(success=True)
         res.status_code = 200
         return res
-
-
-
-
-
-
 
 
 
@@ -509,8 +501,6 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
             self.currentIndex=-1
 
         if self.queueState=="Cancelled" and self.itemState!="Failed":
-
-        
             self.currentIndex=-1
             self.messageToJs({'currentIndex':self.currentIndex})
             self.nextItem()
@@ -530,9 +520,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
                 self.currentIndex=self.currentIndex+1
             self.ejectState=EjectState.IDLE
             self.queueState=QueueState.RUNNING
-
             self.messageToJs({'ejectState':self.ejectState,'queueState':self.queueState,'currentIndex':self.currentIndex})
-
             self.nextItem()
 
         res = jsonify(success=True)
@@ -547,6 +535,18 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
 
         self.messageToJs({'queueState':self.queueState})
         self.nextItem()
+
+        res = jsonify(success=True)
+        res.status_code = 200
+        return res
+
+    
+    @ octoprint.plugin.BlueprintPlugin.route("/send-ports", methods=["POST"])
+    @ restricted_access
+    def sendPort(self):
+
+        data = flask.request.get_json()
+
 
         res = jsonify(success=True)
         res.status_code = 200
