@@ -1,6 +1,7 @@
 import sys
 import glob
 import serial
+import json
 import serial.tools
 import serial.tools.list_ports
 import time
@@ -16,9 +17,10 @@ class SerialPorts(object):
         self.state = ShieldState.IDLE
         self.bedState=BedPosition.MIDDLE
         self.motorState=MotorState.IDLE
-        self.readthread=None
+        self.readThread=None
         self.connection=False
         self.listThread =None
+        self.readLive = False
         self.serialConnection=None
         self.state=ShieldState.ISINSEQUENACE
         
@@ -28,8 +30,7 @@ class SerialPorts(object):
 
   
     def getSummary(self):
-        
-        self.serialConnection.write("[CMD] Summary|123\n".encode())   
+        self.write("Summary") 
         
     def serialPorts(self):
     
@@ -61,8 +62,12 @@ class SerialPorts(object):
 
 
     def serialConnect(self,p):
+
+        
         self.serialConnection=serial.Serial(port=p)
         self.connection=True
+        self.write("Summary")
+        self.startRead()
         self.callOnStateChange()
        
         
@@ -71,78 +76,83 @@ class SerialPorts(object):
 
 
     def selectedPortId(self,p): 
-        self.serialId = p
-        self.portList()
+        if p is not None:
+            self.serialId = p
+        self.startListThread()
         
-
-    def portList(self):
-            self.connection=False
-            self.callOnStateChange()
-            while self.connection==False:
-                self.ports=self.serialPorts()
-                self.callOnStateChange()
-                try:
-                    if len(self.ports)>0:
-                        if self.ports[0]["serial"] == self.serialId:
-                            self.serialConnect(self.ports[0]["device"])
-                            self.serialConnection.write("[CMD] Summary|123\n".encode())   
-                            self.connection=True
-                            self.readFromPort()
-                            break
-                        else:
-                            time.sleep(0.5)
-                            if self.connection==True:
-                                break
-                            self.ports=self.serialPorts()   
-                            self.portList()
-                            self.callOnStateChange()  
-      
-                    
-            
-                except  serial.serialutil.SerialException:
-                    print("connect lose")
-                    
+    def startListThread(self):
+   
+        if self.listThread is None:
             self.listThread = threading.Thread(target=self.portList)
             self.listThread.start()
+
+    def portList(self):
+        while True:
+            if self.connection==False:
+                self.ports=self.serialPorts()
+                self.callOnStateChange()
+                for port in self.ports:
+                    if port["serial"] == self.serialId:
+               
+                        self.serialConnect(port["device"])
+            time.sleep(0.5)
+                    
+            
+   
+                
+                    
   
 
 
     def handle_data(self,data):
-        data=data.replace("[INFO]"," ")    #trim spaces
-        data=data.split(":")  
+        data=data.replace("[INFO] ",":")    #trim spaces
+        data=data.strip(":")
+        data=data.split(":")
+     
+        
         self.state=ShieldState.ISINSEQUENACE   
-        self.callOnStateChange()
         if len(data)>1:   
-            if data[0]=="  M":
+            if data[0]=="M":
                 self.motorState=data[1]
-                self.callOnStateChange()
-            if data[0]=="  B":
+            if data[0]=="B":
                 self.bedState=data[1]
-                self.callOnStateChange()
-            if data[0]=="  C":
-                if data[1]=="Idle\n":
+            if data[0]=="C":
+                if data[1].rstrip()=="Idle":
                     self.state=ShieldState.IDLE
-                    self.callOnStateChange()
-                if data[1]=="SequenceError\n":
+                if data[1].rstrip()=="SequenceError":
                     self.state=ShieldState.EJECTFAIL    
-                    self.callOnStateChange()                
+            self.callOnStateChange()                      
                     
 
+    def startRead(self):
+        self.readLive = True
+        if self.readThread is None:
+            self.readThread = threading.Thread(target=self.readFromPort)
+            self.readThread.start()
+            
+    def stopRead(self):
+        self.readLive = False
+        self.connection=False
+        if self.serialConnection:
+            self.serialConnection.close()
+        self.callOnStateChange()
+        
                 
     def readFromPort(self):
-        print("sa")
-        while self.serialConnection.isOpen():
-            try:
-                reading = self.serialConnection.readline().decode()
-                self.handle_data(reading)
-            except  serial.serialutil.SerialException:
-                self.serialConnection.close()
-                self.portList()
+        if self.readLive is False:
+            self.readThread = None
+            sys.exit()
+        while True:
+            if self.serialConnection.isOpen():
+                try:
+                    reading = self.serialConnection.readline().decode()
+                    self.handle_data(reading)
+                except  serial.serialutil.SerialException:
+               
+                    self.stopRead()
                 
-                break
 
-        self.readthread = threading.Thread(target=self.readFromPort)
-        self.readthread.start()
+       
             
 
         
@@ -150,7 +160,6 @@ class SerialPorts(object):
         
 
     def callOnStateChange(self):
-        self.connection=self.connection
         self.bedPosition=self.bedState
         self.motorPosition=self.motorState
         if self.onStateChange:
@@ -159,19 +168,21 @@ class SerialPorts(object):
 
     def sendActions(self,a):
         if a=="backward":
-           self.serialConnection.write("[CMD] MotorBackward|123\n".encode())
+           self.write("MotorBackward")
         if a=="stop":
-            self.serialConnection.write("[CMD] MotorStop|123\n".encode())
+            self.write("MotorStop")
         if a=="forward":
-           self.serialConnection.write("[CMD] MotorForward|123\n".encode())
+           self.write("MotorForward")
         if a=="eject":
             self.state=ShieldState.ISINSEQUENACE
-          
-            self.serialConnection.write("[CMD] SequenceStart|123\n".encode())      
+            self.write("SequenceStart")      
       
 
-    
+    def write(self,a:str):
+        if self.serialConnection and self.serialConnection.isOpen():
+            msg = "[CMD] "+a+"|123\n"
+            self.serialConnection.write(msg.encode())
+        else:
+            print("USB not exist")
 
-
-
-SerialPorts()   
+ 

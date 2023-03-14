@@ -65,12 +65,12 @@
           </button>
 
 
-          <button data-bind="click: function(){$root.deviceControl('eject')},visible:($root.isShieldConnected()=='Connected'),enable:($root.queueState() == 'Idle' || $root.queueState() == 'Paused')&&($root.isShieldConnected()=='Connected')" title="Cancel ejecting (it only takes effect when eject starts)" >
+          <button data-bind="click: function(){$root.deviceControl('eject')},visible:($root.isShieldConnected()=='Connected'),enable:($root.queueState() == 'Idle' || $root.queueState() == 'Paused')&&($root.isShieldConnected()=='Connected')" title=" eject " >
             <i class="fa fa-eject" style="margin-right:8px">  Eject </i> 
           </button>
 
 
-          <button data-bind="click: function(){$root.deviceControl('stop')},visible:($root.isShieldConnected()=='Connected'),enable: ($root.queueState() == 'Idle' || $root.queueState() == 'Paused')&&($root.isShieldConnected()=='Connected')" title="Cancel ejecting (it only takes effect when eject starts)">
+          <button data-bind="click: function(){$root.deviceControl('stop')},visible:($root.isShieldConnected()=='Connected'),enable: ($root.queueState() == 'Idle' || $root.queueState() == 'Paused')&&($root.isShieldConnected()=='Connected')" title="Cancel ejecting ">
             <i class="fa fa-close" style="margin-right:8px">  Cancel </i> 
           </button>
 
@@ -138,7 +138,7 @@
           
 
 
-        <button data-bind="click: function(){$root.cancelQueue()}, visible: queueState() != 'Idle'&& itemState()!='Cancelling'" title="Cancel printing">
+        <button data-bind="click: function(){$root.cancelQueue()}, visible: queueState() != 'Idle'&& itemState()!='Cancelled'" title="Cancel Queue">
           <i class="	fas fa-stop"> </i> 
         </button>
        

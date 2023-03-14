@@ -66,9 +66,9 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         self.dbQueue = TinyDB( self.queueFilePath)
         self.portFilePath = os.path.join(self.ROOT_DIR,"ports.json")
         fileExist = os.path.exists( self.portFilePath)
-        self.dbPorts = TinyDB( self.portFilePath)
         if not fileExist:
             open( self.portFilePath, 'w+')
+        self.dbPorts = TinyDB( self.portFilePath)
             
         return super().on_startup(host, port)
 
@@ -88,10 +88,11 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         self.serial.onStateChange = self.getStates
         searchPort=Query()
         self.databasePorts=self.dbPorts.get(searchPort.findId=="find")
-        if self.databasePorts!=None:
+        if self.databasePorts is not None:
             self.serial.selectedPortId(self.databasePorts["serialId"])
         else:
-            self.serial.portList()
+            
+            self.serial.selectedPortId(None)
 
 
 
@@ -191,7 +192,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         self.bedPosition=bed
         self.motorState=motor
         self.ports=ports
-        self.messageToJs({"isShieldConnected":self.isShieldConnected,'bedPosition':self.bedPosition,'motorState':self.motorState,'ports':self.ports})
+ 
         
         
         if ejectFinish==ShieldState.IDLE:
@@ -213,7 +214,7 @@ class Speroplugin(octoprint.plugin.StartupPlugin,
         if connetion==False:
             self.isShieldConnected=isShieldConnected.DISCONNECTED
             
-    
+        self.messageToJs({"isShieldConnected":self.isShieldConnected,'bedPosition':self.bedPosition,'motorState':self.motorState,'ports':self.ports})
 
 
     def tryEject(self):                                 #eject için uygun sıcaklıgı saplamak için

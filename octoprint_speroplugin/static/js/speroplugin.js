@@ -343,7 +343,7 @@ $(function() {
                 let regex =
                     /<div class="btn-group action-buttons">([\s\S]*)<.div>/im;
                 let template =
-                    '<div class="btn btn-mini bold" data-bind="click: function() { $root.fileAdItem($data) }," title="Add To Queue" ><i></i>P</div>';
+                    '<div class="btn btn-mini bold" style="font-size:20px; background:#3CAFEA; color:white;" data-bind="click: function() { $root.fileAdItem($data) },"  title="Add To Queue" ><i></i>+</div>';
 
                 $("#files_template_machinecode").text(function () {
                     var return_value = $(this).text();
